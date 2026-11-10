@@ -478,8 +478,12 @@
         for (let i = 1; i <= 10; i++) {
           const li = document.createElement('li');
           const isActive = (i === 10);
+          
+          // Determine the correct URL: If it's Feature 1, go to index.html. Otherwise, go to featureN.html
+          const targetUrl = (i === 1) ? "index.html" : `feature${i}.html`;
+          
           li.innerHTML = `
-            <a href="feature${i}.html" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:text-navy hover:bg-blue-50 text-sm font-semibold transition-colors group ${isActive ? 'active text-navy bg-blue-50' : ''}">
+            <a href="${targetUrl}" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:text-navy hover:bg-blue-50 text-sm font-semibold transition-colors group ${isActive ? 'active text-navy bg-blue-50' : ''}">
               <div class="w-8 h-8 rounded-md ${isActive ? 'bg-orange text-white' : 'bg-blue-50 text-blue-700'} border ${isActive ? 'border-orange' : 'border-blue-100'} flex items-center justify-center group-hover:bg-orange group-hover:text-white group-hover:border-orange transition-colors">
                 <i class="fa-solid ${icons[i-1]} text-xs"></i>
               </div>
