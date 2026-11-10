@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apuni Sarkar Smart Assist – Feature 8</title>
+  <!-- Tailwind + FontAwesome + Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0f2b46',
+            orange: '#d35400',
+            'orange-dark': '#b34700',
+            govgreen: '#0f766e',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    /* ----- Base + Sidebar styles ----- */
+    :root {
+      --navy: #0f2b46;
+      --orange: #d35400;
+      --bg: #f4f6f8;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      color: #1e293b;
+    }
+    body > aside {
+      border-right: 1px solid #cbdcf0;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      width: 16rem;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05);
+      z-index: 30;
+    }
+    body > main {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      background-color: #f4f6f8;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    /* Sidebar nav link style */
+    .nav-link {
+      position: relative;
+      transition: all .25s ease;
+    }
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--orange);
+      transform: scaleY(0);
+      transition: transform .25s ease;
+      border-radius: 0 4px 4px 0;
+    }
+    .nav-link:hover::before,
+    .nav-link.active::before {
+      transform: scaleY(1);
+    }
+
+    /* ---------- IMAGE SLIDER ---------- */
+    .slider-container {
+      position: relative;
+      width: 100%;
+      height: 250px;
+      overflow: hidden;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+    }
+    .slider-track {
+      display: flex;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      height: 100%;
+    }
+    .slider-slide {
+      min-width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #0f2b46;
+      position: relative;
+    }
+    .slider-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 20%; /* Adjust to show the top of the card */
+      opacity: 0.9;
+    }
+    .slider-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(15,43,70,0.9) 0%, rgba(15,43,70,0) 60%);
+      display: flex;
+      align-items: flex-end;
+      padding: 1.5rem;
+    }
+    .slider-dots {
+      position: absolute;
+      bottom: 1rem;
+      right: 1.5rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .slider-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.4);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .slider-dot.active {
+      background: white;
+      transform: scale(1.3);
+    }
+
+    /* ---------- UNIQUE JOURNEY EXPLANATION ---------- */
+    .journey-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    @media (min-width: 768px) {
+      .journey-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .journey-card {
+      background: white;
+      border-radius: 1rem;
+      border: 1px solid #e2e8f0;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    .journey-card:hover {
+      transform: translateY(-4px);
+      border-color: #d35400;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    }
+    .journey-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 4px;
+      background: #e2e8f0;
+      transition: background 0.3s;
+    }
+    .journey-card:hover::before { background: #d35400; }
+    
+    .journey-step-num {
+      width: 2.5rem; height: 2.5rem;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Form Input styling */
+    .form-input {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 2px rgba(211,84,0,0.1);
+    }
+    .form-input:disabled {
+      background-color: #f1f5f9;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+
+    /* Responsive Sidebar */
+    @media (max-width: 768px) {
+      body { overflow: auto; }
+      body > aside { width: 76px; }
+      body > aside h2, body > aside nav a { font-size: 0; }
+      body > aside nav a { justify-content: center; padding-left: 8px; padding-right: 8px; }
+      body > aside nav a > div { margin: 0; }
+      body > aside nav a > i { display: none; }
+      body > aside > div:first-child { justify-content: center; padding: 16px 8px; }
+      body > aside > div:last-child { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside>
+    <div class="p-5 border-b border-blue-100 bg-gradient-to-r from-blue-100 via-blue-50 to-white flex items-center gap-3">
+      <div class="bg-orange text-white p-2.5 rounded-lg shadow-md">
+        <i class="fa-solid fa-bars text-sm"></i>
+      </div>
+      <h2 class="text-base font-extrabold text-navy tracking-wider">NAVIGATION</h2>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-4">
+      <ul id="sidebarNav" class="space-y-1 px-3"></ul>
+    </nav>
+    <div class="p-4 border-t border-blue-100 bg-blue-50/70 text-center">
+      <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Prayas 2026 Prototype</p>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main>
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div>
+        <h1 class="text-3xl font-extrabold text-navy tracking-tight">Feature 8: Devbhoomi Parivar ID Integration</h1>
+        <p class="text-gray-500 text-sm mt-1">Apuni Sarkar Smart Assist – Simplify applications with family data</p>
+      </div>
+      <span class="prototype-badge bg-yellow-100 text-yellow-800 border-yellow-300 px-3 py-1 rounded-full text-xs font-bold shadow-sm"><i class="fa-regular fa-flask mr-1"></i> PROTOTYPE DEMO</span>
+    </div>
+
+    <!-- ================= PART 1: VISUAL EXPLANATION ================= -->
+    <div class="w-full max-w-5xl mx-auto mb-8 space-y-8">
+      
+      <!-- Image Slider (Real world context) -->
+      <div class="slider-container">
+        <div class="slider-track" id="sliderTrack">
+          <!-- Slide 1 -->
+          <div class="slider-slide">
+            <img src="https://imgs.search.brave.com/Oki0w_vBt455tzQgvFNzbTFDXyVRst7frN6mEBhSmzs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LmV0dmJoYXJhdC5j/b20vZXR2YmhhcmF0/L3Byb2QtaW1hZ2Vz/LzAyLTExLTIwMjYv/dWstZGVoLTAyLWNt/LXZpcy03MjExNDA0/XzAyMTEyMDI2MTM1/NTA2XzAyMTFmXzE3/OTM2MDc5MDZfMjY3/LmpwZw" alt="Devbhoomi Parivar Card">
+            <div class="slider-overlay">
+              <div>
+                <h3 class="text-white font-bold text-xl mb-1">The Physical Devbhoomi Card</h3>
+                <p class="text-white/80 text-sm">Every family in Uttarakhand holds a unique 10-digit Family ID that links them to state welfare schemes.</p>
+              </div>
+            </div>
+          </div>
+          <!-- Slide 2 -->
+          <div class="slider-slide">
+            <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Family" style="object-position: center 30%;">
+            <div class="slider-overlay">
+              <div>
+                <h3 class="text-white font-bold text-xl mb-1">One ID, Endless Possibilities</h3>
+                <p class="text-white/80 text-sm">Instead of remembering details for every family member, the Smart Assist fetches it securely.</p>
+              </div>
+            </div>
+          </div>
+          <!-- Slide 3 -->
+          <div class="slider-slide">
+            <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Forms">
+            <div class="slider-overlay">
+              <div>
+                <h3 class="text-white font-bold text-xl mb-1">No More Repetitive Forms</h3>
+                <p class="text-white/80 text-sm">Auto-fill names, districts, and relationships. Spend less time typing and more time living.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slider-dots" id="sliderDots">
+          <span class="slider-dot active" onclick="goToSlide(0)"></span>
+          <span class="slider-dot" onclick="goToSlide(1)"></span>
+          <span class="slider-dot" onclick="goToSlide(2)"></span>
+        </div>
+      </div>
+
+      <!-- The Unique Journey Explanation -->
+      <div>
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-extrabold text-navy">The Journey of a Single Click</h2>
+          <p class="text-gray-500 text-sm mt-1">How Devbhoomi ID integration transforms a 20-minute form into a 2-minute confirmation.</p>
+        </div>
+
+        <div class="journey-grid">
+          <!-- Benefit 1 -->
+          <div class="journey-card">
+            <div class="flex items-start gap-4">
+              <div class="journey-step-num bg-blue-100 text-blue-600"><i class="fa-solid fa-id-card"></i></div>
+              <div>
+                <h3 class="font-bold text-navy text-lg mb-2">1. The Consent-First Verification</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                  <strong>What happens:</strong> The citizen enters their Family ID and checks a consent box.<br><br>
+                  <strong>Why it matters:</strong> Data privacy is paramount. The system does not fetch data silently. By requiring explicit consent, we ensure the citizen is in total control of their family's demographic data.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Benefit 2 -->
+          <div class="journey-card">
+            <div class="flex items-start gap-4">
+              <div class="journey-step-num bg-orange-100 text-orange"><i class="fa-solid fa-users-viewfinder"></i></div>
+              <div>
+                <h3 class="font-bold text-navy text-lg mb-2">2. The Family Snapshot</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                  <strong>What happens:</strong> The system retrieves a list of all family members linked to the ID (e.g., Rahul, Sunita, Aman).<br><br>
+                  <strong>Why it matters:</strong> A single parent can easily apply for a scholarship for their child, or a certificate for their spouse, without needing to re-enter their names, ages, or relationships manually.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Benefit 3 -->
+          <div class="journey-card">
+            <div class="flex items-start gap-4">
+              <div class="journey-step-num bg-green-100 text-green-600"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+              <div>
+                <h3 class="font-bold text-navy text-lg mb-2">3. The Auto-Prefill Magic</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                  <strong>What happens:</strong> When applying for an Income Certificate, the applicant's name, district, village, and relationship to the head are instantly filled in.<br><br>
+                  <strong>Why it matters:</strong> It eliminates typographical errors (e.g., misspelling a village name) that cause government applications to be rejected. The data is guaranteed to match state records.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Benefit 4 -->
+          <div class="journey-card">
+            <div class="flex items-start gap-4">
+              <div class="journey-step-num bg-purple-100 text-purple-600"><i class="fa-solid fa-clipboard-check"></i></div>
+              <div>
+                <h3 class="font-bold text-navy text-lg mb-2">4. Final Review & Local Save</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                  <strong>What happens:</strong> The citizen reviews the auto-filled data, adds any missing mobile numbers or specific details, and confirms.<br><br>
+                  <strong>Why it matters:</strong> The citizen remains the final authority. The application is then saved locally, ready to be pushed to the government server when the backend is integrated.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= PART 2: LIVE INTERACTIVE PROTOTYPE ================= -->
+    <div class="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 md:p-6 shadow-sm mx-auto max-w-5xl mb-12">
+      
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-extrabold text-navy flex items-center gap-2">
+          <i class="fa-solid fa-laptop-code text-orange"></i> Live Demo: Parivar ID Application Flow
+        </h2>
+        <button onclick="resetDemo()" class="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors"><i class="fa-solid fa-rotate-left mr-1"></i> Reset Demo</button>
+      </div>
+
+      <!-- Step 1: Verification -->
+      <div id="step-verify" class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div class="max-w-md mx-auto text-center">
+          <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 border border-blue-100">
+            <i class="fa-solid fa-id-card"></i>
+          </div>
+          <h3 class="text-xl font-bold text-navy mb-2">Enter Devbhoomi Parivar ID</h3>
+          <p class="text-sm text-gray-500 mb-6">Access family details securely and reduce repeated information entry.</p>
+          
+          <div class="text-left space-y-4 mb-6">
+            <div>
+              <label class="text-xs font-bold text-gray-600 mb-1 block">Family ID</label>
+              <input type="text" id="input-family-id" class="form-input" placeholder="e.g. UK-FAMILY-1001" value="UK-FAMILY-1001">
+              <p class="text-[10px] text-gray-400 mt-1">For demo, use <strong>UK-FAMILY-1001</strong></p>
+            </div>
+            <label class="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" id="input-consent" class="mt-1 w-4 h-4 text-orange rounded border-gray-300 focus:ring-orange">
+              <span class="text-xs text-gray-600 leading-tight">I consent to using my family details for this application. (Simulated)</span>
+            </label>
+          </div>
+          
+          <button onclick="verifyFamilyId()" id="btn-verify" class="w-full bg-navy text-white font-bold py-3 rounded-lg hover:bg-blue-900 transition-colors shadow">
+            Verify Family ID
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Family Members -->
+      <div id="step-members" class="hidden bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+          <div class="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-lg">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-navy">Family Verified Successfully</h3>
+            <p class="text-xs text-gray-500">Family ID: <strong class="text-navy">UK-FAMILY-1001</strong> | Head: Rahul Sharma | Tehri Garhwal</p>
+          </div>
+        </div>
+
+        <h4 class="text-sm font-bold text-navy mb-3">Who is applying for the service?</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6" id="family-members-list">
+          <!-- Injected via JS -->
+        </div>
+
+        <div class="flex justify-end">
+          <button onclick="proceedToService()" id="btn-continue-member" disabled class="bg-orange text-white font-bold px-6 py-2.5 rounded-lg hover:bg-orange-dark transition-colors shadow disabled:opacity-50 disabled:cursor-not-allowed">
+            Continue with Selected Member <i class="fa-solid fa-arrow-right ml-1"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Service Selection & Prefill -->
+      <div id="step-service" class="hidden bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+          <div>
+            <h3 class="text-lg font-bold text-navy">Select Government Service</h3>
+            <p class="text-xs text-gray-500">Applicant: <strong id="disp-applicant-name" class="text-orange">Aman Sharma</strong></p>
+          </div>
+          <button onclick="backToMembers()" class="text-xs text-blue-600 hover:text-blue-800 font-bold"><i class="fa-solid fa-arrow-left mr-1"></i> Change Member</button>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <button onclick="selectService('Income Certificate')" class="service-btn border border-gray-200 rounded-lg p-3 text-center hover:border-orange hover:bg-orange-50 transition-colors">
+            <i class="fa-solid fa-file-invoice-dollar text-blue-500 text-xl mb-1"></i>
+            <span class="block text-xs font-bold text-navy">Income Certificate</span>
+          </button>
+          <button onclick="selectService('Residence Certificate')" class="service-btn border border-gray-200 rounded-lg p-3 text-center hover:border-orange hover:bg-orange-50 transition-colors">
+            <i class="fa-solid fa-house-user text-green-500 text-xl mb-1"></i>
+            <span class="block text-xs font-bold text-navy">Residence Certificate</span>
+          </button>
+          <button onclick="selectService('Caste Certificate')" class="service-btn border border-gray-200 rounded-lg p-3 text-center hover:border-orange hover:bg-orange-50 transition-colors">
+            <i class="fa-solid fa-users text-purple-500 text-xl mb-1"></i>
+            <span class="block text-xs font-bold text-navy">Caste Certificate</span>
+          </button>
+          <button onclick="selectService('Scholarship Application')" class="service-btn border border-gray-200 rounded-lg p-3 text-center hover:border-orange hover:bg-orange-50 transition-colors">
+            <i class="fa-solid fa-graduation-cap text-orange-500 text-xl mb-1"></i>
+            <span class="block text-xs font-bold text-navy">Scholarship</span>
+          </button>
+        </div>
+
+        <!-- Prefilled Form -->
+        <div id="prefill-form" class="hidden border-t border-gray-200 pt-6">
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-start gap-2">
+            <i class="fa-solid fa-wand-magic-sparkles text-blue-600 mt-0.5"></i>
+            <p class="text-xs text-blue-800"><strong>Auto-filled:</strong> Information retrieved from the sample family record. You can edit editable fields.</p>
+          </div>
+
+          <form onsubmit="reviewApplication(event)" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="text-xs font-bold text-gray-600 mb-1 block">Applicant Name</label>
+                <input type="text" id="prefill-name" class="form-input" readonly>
+              </div>
+              <div>
+                <label class="text-xs font-bold text-gray-600 mb-1 block">Family ID</label>
+                <input type="text" id="prefill-family-id" class="form-input" readonly>
+              </div>
+              <div>
+                <label class="text-xs font-bold text-gray-600 mb-1 block">District</label>
+                <input type="text" id="prefill-district" class="form-input" readonly>
+              </div>
+              <div>
+                <label class="text-xs font-bold text-gray-600 mb-1 block">Village</label>
+                <input type="text" id="prefill-village" class="form-input" readonly>
+              </div>
+              <div>
+                <label class="text-xs font-bold text-gray-600 mb-1 block">Relationship to Head</label>
+                <input type="text" id="prefill-relation" class="form-input" readonly>
+              </div>
+              <div>
+                <label class="text-xs font-bold text-gray-600 mb-1 block">Mobile Number</label>
+                <input type="text" id="prefill-mobile" class="form-input" placeholder="Enter mobile number" required>
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-bold text-gray-600 mb-1 block">Additional Application Details</label>
+              <textarea id="prefill-details" rows="2" class="form-input" placeholder="Enter any specific details required for this service..." required></textarea>
+            </div>
+            
+            <button type="submit" class="w-full bg-navy text-white font-bold py-3 rounded-lg hover:bg-blue-900 transition-colors shadow mt-2">
+              Review Application
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Step 4: Review & Confirm -->
+      <div id="step-review" class="hidden bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div class="text-center mb-6">
+          <div class="w-12 h-12 bg-orange-100 text-orange rounded-full flex items-center justify-center text-xl mx-auto mb-3">
+            <i class="fa-solid fa-clipboard-list"></i>
+          </div>
+          <h3 class="text-xl font-bold text-navy">Review Application</h3>
+          <p class="text-sm text-gray-500">Please confirm your details before final submission.</p>
+        </div>
+
+        <div class="bg-gray-50 rounded-xl border border-gray-200 p-5 mb-6 max-w-2xl mx-auto">
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div><span class="text-gray-500 block text-xs">Applicant</span><strong id="rev-name" class="text-navy">Aman Sharma</strong></div>
+            <div><span class="text-gray-500 block text-xs">Family ID</span><strong id="rev-family" class="text-navy">UK-FAMILY-1001</strong></div>
+            <div><span class="text-gray-500 block text-xs">Service</span><strong id="rev-service" class="text-navy">Scholarship Application</strong></div>
+            <div><span class="text-gray-500 block text-xs">Mobile</span><strong id="rev-mobile" class="text-navy">9876543210</strong></div>
+            <div class="col-span-2"><span class="text-gray-500 block text-xs">District / Village</span><strong id="rev-location" class="text-navy">Tehri Garhwal, Example Village</strong></div>
+            <div class="col-span-2"><span class="text-gray-500 block text-xs">Additional Details</span><strong id="rev-details" class="text-navy italic">"Applying for 2026 scholarship."</strong></div>
+          </div>
+        </div>
+
+        <label class="flex items-start justify-center gap-2 cursor-pointer mb-6">
+          <input type="checkbox" id="input-confirm-review" class="mt-1 w-4 h-4 text-orange rounded border-gray-300 focus:ring-orange">
+          <span class="text-sm text-gray-700">I have reviewed and confirm that the information is correct.</span>
+        </label>
+
+        <div class="flex justify-center gap-3">
+          <button onclick="backToService()" class="px-6 py-2.5 rounded-lg font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-colors">Edit Details</button>
+          <button onclick="confirmApplication()" id="btn-final-confirm" disabled class="bg-green-600 text-white font-bold px-8 py-2.5 rounded-lg hover:bg-green-700 transition-colors shadow disabled:opacity-50 disabled:cursor-not-allowed">
+            Confirm Application Details
+          </button>
+        </div>
+      </div>
+
+      <!-- Success State -->
+      <div id="step-success" class="hidden bg-green-50 border border-green-200 rounded-xl p-8 shadow-sm text-center">
+        <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+          <i class="fa-solid fa-check-circle"></i>
+        </div>
+        <h3 class="text-2xl font-extrabold text-green-900 mb-2">Application Prepared!</h3>
+        <p class="text-green-800 max-w-md mx-auto mb-6">
+          Family details successfully used to prepare your application. Please review all information before proceeding to the government portal.
+        </p>
+        <div class="bg-white rounded-lg p-3 inline-block text-sm font-bold text-navy shadow-sm border border-green-100 mb-6">
+          Application ID: <span id="disp-app-id" class="text-orange">APP-2026-88</span>
+        </div>
+        <br>
+        <button onclick="resetDemo()" class="bg-navy text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-blue-900 transition-colors">Start New Application</button>
+      </div>
+
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex items-start gap-3 max-w-5xl mx-auto w-full mb-12">
+      <i class="fa-solid fa-circle-info text-blue-600 text-xl mt-0.5"></i>
+      <p class="text-sm text-blue-800 leading-relaxed">
+        <strong class="font-bold">Prototype only.</strong> Demonstration prototype using fictional sample family data. No real Devbhoomi Parivar ID database or government services are connected.
+      </p>
+    </div>
+
+  </main>
+
+  <!-- ========== SCRIPT ========== -->
+  <script>
+    (function() {
+      // ---- 1. Build Sidebar ----
+      const icons = ['fa-star', 'fa-bolt', 'fa-shield-halved', 'fa-chart-line', 'fa-gears', 'fa-bell', 'fa-book', 'fa-headset', 'fa-database', 'fa-link'];
+      const sidebarNav = document.getElementById('sidebarNav');
+      if (sidebarNav) {
+        for (let i = 1; i <= 10; i++) {
+          const li = document.createElement('li');
+          const isActive = (i === 8); // Feature 8
+          li.innerHTML = `
+            <a href="feature${i}.html" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:text-navy hover:bg-blue-50 text-sm font-semibold transition-colors group ${isActive ? 'active text-navy bg-blue-50' : ''}">
+              <div class="w-8 h-8 rounded-md ${isActive ? 'bg-orange text-white' : 'bg-blue-50 text-blue-700'} border ${isActive ? 'border-orange' : 'border-blue-100'} flex items-center justify-center group-hover:bg-orange group-hover:text-white group-hover:border-orange transition-colors">
+                <i class="fa-solid ${icons[i-1]} text-xs"></i>
+              </div>
+              Feature ${i}
+              <i class="fa-solid fa-chevron-right ml-auto ${isActive ? 'text-orange' : 'text-gray-300'} text-[10px] group-hover:text-orange transition-colors"></i>
+            </a>`;
+          sidebarNav.appendChild(li);
+        }
+      }
+
+      // ---- 2. Image Slider Logic ----
+      let currentSlide = 0;
+      const track = document.getElementById('sliderTrack');
+      const dots = document.querySelectorAll('.slider-dot');
+
+      window.goToSlide = function(index) {
+        currentSlide = index;
+        track.style.transform = `translateX(-${index * 100}%)`;
+        dots.forEach((dot, i) => {
+          dot.classList.toggle('active', i === index);
+        });
+      };
+
+      // Auto slide every 5 seconds
+      setInterval(() => {
+        currentSlide = (currentSlide + 1) % 3;
+        goToSlide(currentSlide);
+      }, 5000);
+
+
+      // ---- 3. Prototype Data & State ----
+      // Sample Family Data
+      const FAMILY_DATA = {
+        "UK-FAMILY-1001": {
+          head: "Rahul Sharma",
+          district: "Tehri Garhwal",
+          village: "Example Village",
+          members: [
+            { name: "Rahul Sharma", relation: "Head of Family", age: 45, gender: "Male" },
+            { name: "Sunita Sharma", relation: "Spouse", age: 42, gender: "Female" },
+            { name: "Aman Sharma", relation: "Son", age: 18, gender: "Male" }
+          ]
+        }
+      };
+
+      let selectedMember = null;
+      let selectedService = null;
+
+      window.resetDemo = function() {
+        // Reset state
+        selectedMember = null;
+        selectedService = null;
+        
+        // Reset UI
+        document.getElementById('input-family-id').value = "UK-FAMILY-1001";
+        document.getElementById('input-consent').checked = false;
+        
+        document.getElementById('step-verify').classList.remove('hidden');
+        document.getElementById('step-members').classList.add('hidden');
+        document.getElementById('step-service').classList.add('hidden');
+        document.getElementById('step-review').classList.add('hidden');
+        document.getElementById('step-success').classList.add('hidden');
+        document.getElementById('prefill-form').classList.add('hidden');
+        
+        // Clear form fields
+        document.getElementById('prefill-mobile').value = "";
+        document.getElementById('prefill-details').value = "";
+        document.getElementById('input-confirm-review').checked = false;
+        document.getElementById('btn-final-confirm').disabled = true;
+      };
+
+      // ---- 4. Step 1: Verification ----
+      window.verifyFamilyId = function() {
+        const id = document.getElementById('input-family-id').value.trim().toUpperCase();
+        const consent = document.getElementById('input-consent').checked;
+        
+        if(!consent) {
+          alert("Please check the consent box to proceed.");
+          return;
+        }
+
+        const btn = document.getElementById('btn-verify');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Verifying...`;
+        btn.disabled = true;
+
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+
+          if (FAMILY_DATA[id]) {
+            // Success
+            document.getElementById('step-verify').classList.add('hidden');
+            document.getElementById('step-members').classList.remove('hidden');
+            renderFamilyMembers(FAMILY_DATA[id]);
+          } else {
+            alert("Invalid Family ID. Please try 'UK-FAMILY-1001' for the prototype.");
+          }
+        }, 1200);
+      };
+
+      // ---- 5. Step 2: Family Members ----
+      function renderFamilyMembers(data) {
+        const list = document.getElementById('family-members-list');
+        list.innerHTML = data.members.map((m, index) => `
+          <div onclick="selectMember(${index})" id="member-card-${index}" class="member-card border border-gray-200 rounded-lg p-3 cursor-pointer hover:border-orange transition-all bg-white relative">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold text-lg">
+                ${m.name.charAt(0)}
+              </div>
+              <div>
+                <p class="font-bold text-navy text-sm">${m.name}</p>
+                <p class="text-xs text-orange font-medium">${m.relation}</p>
+                <p class="text-[10px] text-gray-400 mt-0.5">${m.age} yrs • ${m.gender}</p>
+              </div>
+            </div>
+            <div class="absolute top-2 right-2 hidden text-green-500 check-icon">
+              <i class="fa-solid fa-circle-check text-lg"></i>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      window.selectMember = function(index) {
+        const data = FAMILY_DATA["UK-FAMILY-1001"];
+        selectedMember = data.members[index];
+        
+        // Update UI highlights
+        document.querySelectorAll('.member-card').forEach(card => {
+          card.classList.remove('border-orange', 'bg-orange-50');
+          card.classList.add('border-gray-200', 'bg-white');
+          card.querySelector('.check-icon').classList.add('hidden');
+        });
+        
+        const selectedCard = document.getElementById(`member-card-${index}`);
+        selectedCard.classList.remove('border-gray-200', 'bg-white');
+        selectedCard.classList.add('border-orange', 'bg-orange-50');
+        selectedCard.querySelector('.check-icon').classList.remove('hidden');
+        
+        // Enable next button
+        document.getElementById('btn-continue-member').disabled = false;
+      };
+
+      window.proceedToService = function() {
+        if(!selectedMember) return;
+        
+        document.getElementById('step-members').classList.add('hidden');
+        document.getElementById('step-service').classList.remove('hidden');
+        document.getElementById('disp-applicant-name').innerText = selectedMember.name;
+        
+        // Reset service selection
+        document.querySelectorAll('.service-btn').forEach(btn => {
+          btn.classList.remove('border-orange', 'bg-orange-50', 'ring-2', 'ring-orange');
+        });
+        document.getElementById('prefill-form').classList.add('hidden');
+        selectedService = null;
+      };
+
+      window.backToMembers = function() {
+        document.getElementById('step-service').classList.add('hidden');
+        document.getElementById('step-members').classList.remove('hidden');
+      };
+
+      // ---- 6. Step 3: Service Selection & Prefill ----
+      window.selectService = function(serviceName) {
+        selectedService = serviceName;
+        
+        // Highlight button
+        document.querySelectorAll('.service-btn').forEach(btn => {
+          btn.classList.remove('border-orange', 'bg-orange-50', 'ring-2', 'ring-orange');
+        });
+        // Find the button that was clicked (simplistic approach based on text content)
+        const btns = Array.from(document.querySelectorAll('.service-btn'));
+        const activeBtn = btns.find(b => b.innerText.includes(serviceName.split(' ')[0]));
+        if(activeBtn) activeBtn.classList.add('border-orange', 'bg-orange-50', 'ring-2', 'ring-orange');
+        
+        // Show form
+        document.getElementById('prefill-form').classList.remove('hidden');
+        
+        // Prefill data
+        const data = FAMILY_DATA["UK-FAMILY-1001"];
+        document.getElementById('prefill-name').value = selectedMember.name;
+        document.getElementById('prefill-family-id').value = "UK-FAMILY-1001";
+        document.getElementById('prefill-district').value = data.district;
+        document.getElementById('prefill-village').value = data.village;
+        document.getElementById('prefill-relation').value = selectedMember.relation;
+        
+        // Scroll to form
+        document.getElementById('prefill-form').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      };
+
+      // ---- 7. Step 4: Review & Confirm ----
+      window.reviewApplication = function(e) {
+        e.preventDefault();
+        
+        // Populate Review Screen
+        document.getElementById('rev-name').innerText = document.getElementById('prefill-name').value;
+        document.getElementById('rev-family').innerText = document.getElementById('prefill-family-id').value;
+        document.getElementById('rev-service').innerText = selectedService;
+        document.getElementById('rev-mobile').innerText = document.getElementById('prefill-mobile').value;
+        document.getElementById('rev-location').innerText = `${document.getElementById('prefill-district').value}, ${document.getElementById('prefill-village').value}`;
+        document.getElementById('rev-details').innerText = `"${document.getElementById('prefill-details').value}"`;
+        
+        // Switch views
+        document.getElementById('step-service').classList.add('hidden');
+        document.getElementById('step-review').classList.remove('hidden');
+        
+        // Reset checkbox
+        document.getElementById('input-confirm-review').checked = false;
+        document.getElementById('btn-final-confirm').disabled = true;
+      };
+
+      window.backToService = function() {
+        document.getElementById('step-review').classList.add('hidden');
+        document.getElementById('step-service').classList.remove('hidden');
+      };
+
+      // Checkbox listener for final confirm
+      document.getElementById('input-confirm-review').addEventListener('change', function() {
+        document.getElementById('btn-final-confirm').disabled = !this.checked;
+      });
+
+      window.confirmApplication = function() {
+        const isConfirmed = document.getElementById('input-confirm-review').checked;
+        if(!isConfirmed) return;
+
+        // Save to localStorage
+        const appData = {
+          id: "APP-2026-" + Math.floor(10 + Math.random() * 90),
+          familyId: document.getElementById('prefill-family-id').value,
+          applicant: document.getElementById('prefill-name').value,
+          service: selectedService,
+          mobile: document.getElementById('prefill-mobile').value,
+          details: document.getElementById('prefill-details').value,
+          timestamp: new Date().toLocaleString()
+        };
+        
+        localStorage.setItem('apuni_parivar_app', JSON.stringify(appData));
+
+        // Show success
+        document.getElementById('step-review').classList.add('hidden');
+        document.getElementById('step-success').classList.remove('hidden');
+        document.getElementById('disp-app-id').innerText = appData.id;
+      };
+
+    })();
+  </script>
+</body>
+</html>

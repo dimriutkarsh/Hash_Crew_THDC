@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apuni Sarkar Smart Assist – Feature 6</title>
+  <!-- Tailwind + FontAwesome + Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS & JS (Open Source Map Library) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0f2b46',
+            orange: '#d35400',
+            'orange-dark': '#b34700',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    /* ----- Base + Sidebar styles ----- */
+    :root {
+      --navy: #0f2b46;
+      --orange: #d35400;
+      --bg: #f4f6f8;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      color: #1e293b;
+    }
+    body > aside {
+      border-right: 1px solid #cbdcf0;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      width: 16rem;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05);
+      z-index: 30;
+    }
+    body > main {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      background-color: #f4f6f8;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    /* Sidebar nav link style */
+    .nav-link {
+      position: relative;
+      transition: all .25s ease;
+    }
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--orange);
+      transform: scaleY(0);
+      transition: transform .25s ease;
+      border-radius: 0 4px 4px 0;
+    }
+    .nav-link:hover::before,
+    .nav-link.active::before {
+      transform: scaleY(1);
+    }
+
+    /* ---------- LEAFLET MAP STYLES ---------- */
+    #map {
+      height: 450px;
+      width: 100%;
+      border-radius: 0.75rem;
+      z-index: 1;
+      border: 1px solid #e2e8f0;
+    }
+    .custom-div-icon {
+      background: transparent;
+      border: none;
+    }
+    .marker-bubble {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: all 0.2s ease;
+    }
+    .marker-bubble:hover {
+      transform: scale(1.15);
+    }
+
+    /* Responsive Sidebar */
+    @media (max-width: 768px) {
+      body { overflow: auto; }
+      body > aside { width: 76px; }
+      body > aside h2, body > aside nav a { font-size: 0; }
+      body > aside nav a { justify-content: center; padding-left: 8px; padding-right: 8px; }
+      body > aside nav a > div { margin: 0; }
+      body > aside nav a > i { display: none; }
+      body > aside > div:first-child { justify-content: center; padding: 16px 8px; }
+      body > aside > div:last-child { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside>
+    <div class="p-5 border-b border-blue-100 bg-gradient-to-r from-blue-100 via-blue-50 to-white flex items-center gap-3">
+      <div class="bg-orange text-white p-2.5 rounded-lg shadow-md">
+        <i class="fa-solid fa-bars text-sm"></i>
+      </div>
+      <h2 class="text-base font-extrabold text-navy tracking-wider">NAVIGATION</h2>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-4">
+      <ul id="sidebarNav" class="space-y-1 px-3"></ul>
+    </nav>
+    <div class="p-4 border-t border-blue-100 bg-blue-50/70 text-center">
+      <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Prayas 2026 Prototype</p>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main>
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div>
+        <h1 class="text-3xl font-extrabold text-navy tracking-tight">Feature 6: GIS Complaint Mapping</h1>
+        <p class="text-gray-500 text-sm mt-1">Apuni Sarkar Smart Assist – Visualizing public issues by location</p>
+      </div>
+      <span class="prototype-badge bg-yellow-100 text-yellow-800 border-yellow-300 px-3 py-1 rounded-full text-xs font-bold shadow-sm"><i class="fa-regular fa-flask mr-1"></i> PROTOTYPE DEMO</span>
+    </div>
+
+    <!-- ================= PART 1: EXPLANATION ================= -->
+    <div class="w-full max-w-5xl mx-auto mb-8">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-extrabold text-navy">From a Single Complaint to a Strategic Hotspot</h2>
+        <p class="text-gray-500 text-sm mt-1">How GIS Mapping changes the way officials see public issues.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Step 1 -->
+        <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+          <div class="absolute top-0 left-0 w-full h-1 bg-blue-400"></div>
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-extrabold text-lg mb-3">1</div>
+          <h3 class="font-bold text-navy text-lg mb-2">The Scattered Dots</h3>
+          <p class="text-sm text-gray-600 leading-relaxed mb-4">Citizens report issues. In a traditional system, these are just rows in a spreadsheet.</p>
+          <div class="bg-gray-50 border border-gray-200 rounded p-3 text-xs font-mono text-gray-500">
+            > UK-1042: Road Damage (Tehri)<br>
+            > UK-1043: Water Supply (Dehradun)<br>
+            > UK-1044: Road Damage (Tehri)
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+          <div class="absolute top-0 left-0 w-full h-1 bg-orange-400"></div>
+          <div class="w-10 h-10 rounded-full bg-orange-100 text-orange flex items-center justify-center font-extrabold text-lg mb-3">2</div>
+          <h3 class="font-bold text-navy text-lg mb-2">The Geographic Lens</h3>
+          <p class="text-sm text-gray-600 leading-relaxed mb-4">The GIS system plots every complaint onto an interactive map of Uttarakhand.</p>
+          <div class="bg-blue-50 border border-blue-200 rounded p-3 flex justify-around items-center">
+            <div class="text-center"><span class="block text-red-600 font-bold text-lg">4</span><span class="text-[10px] text-gray-500">Tehri</span></div>
+            <div class="text-center"><span class="block text-orange-500 font-bold text-lg">3</span><span class="text-[10px] text-gray-500">Dehradun</span></div>
+            <div class="text-center"><span class="block text-green-500 font-bold text-lg">1</span><span class="text-[10px] text-gray-500">Uttarkashi</span></div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+          <div class="absolute top-0 left-0 w-full h-1 bg-green-400"></div>
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-extrabold text-lg mb-3">3</div>
+          <h3 class="font-bold text-navy text-lg mb-2">The Hotspot Action</h3>
+          <p class="text-sm text-gray-600 leading-relaxed mb-4">Officials instantly see a "Red Zone" (like Tehri with multiple complaints) and prioritize resources.</p>
+          <div class="bg-green-50 border border-green-200 rounded p-3 text-center">
+            <span class="inline-block bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full text-xs mb-2"><i class="fa-solid fa-fire"></i> High Density Hotspot</span>
+            <p class="text-xs text-green-800 font-semibold">Deploy team to Tehri Garhwal.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 flex gap-4 items-start">
+        <i class="fa-solid fa-lightbulb text-orange text-xl mt-1"></i>
+        <p class="text-sm text-gray-700 leading-relaxed">
+          <strong class="text-navy">The Innovation:</strong> Instead of hunting through tables, officials use the <strong>Interactive OpenStreetMap</strong> below. Clicking any district marker acts as a drill-down, showing exactly which categories (Road, Water, etc.) are causing the most stress in that specific area, along with instant complaint counts and official monitoring tools.
+        </p>
+      </div>
+    </div>
+
+    <!-- ================= PART 2: LIVE DASHBOARD ================= -->
+    <div class="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 md:p-6 shadow-sm mx-auto max-w-5xl mb-12">
+      
+      <!-- Dashboard Controls -->
+      <div class="flex flex-wrap justify-between items-center bg-white p-4 rounded-xl border border-gray-200 mb-6 shadow-sm gap-3">
+        <div class="flex flex-wrap gap-2">
+          <button onclick="loadDemoData()" class="bg-navy text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-900 transition-colors shadow"><i class="fa-solid fa-download mr-1"></i> Load Demo Data</button>
+          <button onclick="resetDemo()" class="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors"><i class="fa-solid fa-rotate-left mr-1"></i> Reset Demo</button>
+        </div>
+        
+        <!-- Filters -->
+        <div class="flex gap-2 flex-wrap">
+          <select id="filter-category" onchange="renderDashboard()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange bg-white shadow-sm font-medium text-gray-700">
+            <option value="All">All Categories</option>
+            <option value="Road Damage">Road Damage</option>
+            <option value="Water Supply">Water Supply</option>
+            <option value="Electricity">Electricity</option>
+            <option value="Drainage">Drainage</option>
+            <option value="Public Infrastructure">Public Infrastructure</option>
+          </select>
+          <select id="filter-status" onchange="renderDashboard()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange bg-white shadow-sm font-medium text-gray-700">
+            <option value="All">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Escalated">Escalated</option>
+            <option value="Resolved">Resolved</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm text-center">
+          <p class="text-xs text-gray-500 font-bold uppercase">Total Complaints</p>
+          <p id="stat-total" class="text-2xl font-extrabold text-navy">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm text-center">
+          <p class="text-xs text-gray-500 font-bold uppercase">Pending</p>
+          <p id="stat-pending" class="text-2xl font-extrabold text-orange">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm text-center">
+          <p class="text-xs text-gray-500 font-bold uppercase">Escalated</p>
+          <p id="stat-escalated" class="text-2xl font-extrabold text-red-600">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm text-center">
+          <p class="text-xs text-gray-500 font-bold uppercase">Resolved</p>
+          <p id="stat-resolved" class="text-2xl font-extrabold text-green-600">0</p>
+        </div>
+      </div>
+
+      <!-- Main Map & Side Panel Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left: Interactive Leaflet Map & Hotspots -->
+        <div class="lg:col-span-2 space-y-6">
+          
+          <!-- Leaflet Map Container -->
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 overflow-hidden relative">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-sm font-bold text-navy"><i class="fa-solid fa-map-location-dot text-orange mr-1"></i> Uttarakhand Complaint Map</h3>
+              <span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded font-bold border border-gray-200">OpenStreetMap</span>
+            </div>
+            
+            <!-- The Map Div -->
+            <div id="map"></div>
+            
+            <!-- Map Legend -->
+            <div class="flex justify-between items-center mt-3 text-xs text-gray-500 px-2 font-medium">
+              <span><span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span> Low (1-2)</span>
+              <span><span class="inline-block w-3 h-3 rounded-full bg-orange-500 mr-1"></span> Medium (3-4)</span>
+              <span><span class="inline-block w-3 h-3 rounded-full bg-red-600 mr-1"></span> High (5+)</span>
+            </div>
+          </div>
+
+          <!-- Hotspot Ranking -->
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+            <h3 class="text-sm font-bold text-navy mb-3"><i class="fa-solid fa-fire text-red-500 mr-1"></i> Complaint Hotspots</h3>
+            <div id="hotspot-list" class="space-y-2 max-h-48 overflow-y-auto pr-2">
+              <!-- Injected via JS -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: Details Panel -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 h-full sticky top-4">
+            <h3 class="text-sm font-bold text-navy mb-3 border-b pb-2">District Details</h3>
+            
+            <div id="panel-empty" class="text-center py-10">
+              <i class="fa-solid fa-location-crosshairs text-4xl text-gray-300 mb-3"></i>
+              <p class="text-sm text-gray-500">Click a district on the map or a hotspot to view details.</p>
+            </div>
+
+            <div id="panel-content" class="hidden space-y-4">
+              <div>
+                <h4 id="panel-district" class="text-xl font-extrabold text-navy">Tehri Garhwal</h4>
+                <p id="panel-total" class="text-xs font-bold text-orange uppercase tracking-wider mt-1">12 Total Complaints</p>
+              </div>
+              
+              <!-- Status Mini Cards -->
+              <div class="grid grid-cols-2 gap-2">
+                <div class="bg-orange-50 p-2 rounded text-center border border-orange-100">
+                  <span class="block text-xs text-orange-600 font-bold">Pending</span>
+                  <span id="panel-pending" class="text-lg font-extrabold text-orange-700">5</span>
+                </div>
+                <div class="bg-green-50 p-2 rounded text-center border border-green-100">
+                  <span class="block text-xs text-green-600 font-bold">Resolved</span>
+                  <span id="panel-resolved" class="text-lg font-extrabold text-green-700">4</span>
+                </div>
+              </div>
+
+              <div>
+                <p class="text-xs font-bold text-gray-500 mb-2 uppercase">Complaint IDs in this area</p>
+                <div id="panel-complaints-list" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  <!-- Injected via JS -->
+                </div>
+              </div>
+
+              <!-- Official Remarks -->
+              <div class="border-t pt-3">
+                <p class="text-xs font-bold text-gray-500 mb-1 uppercase">Official Monitoring Note</p>
+                <textarea id="panel-remark-input" rows="2" class="w-full border rounded-lg px-2 py-1.5 text-xs outline-none focus:border-orange" placeholder="E.g., Team dispatched to inspect..."></textarea>
+                <button onclick="saveAreaRemark()" class="mt-2 w-full bg-navy text-white text-xs font-bold py-1.5 rounded hover:bg-blue-900 transition">Save Remark</button>
+                <p id="panel-remark-display" class="text-[11px] text-navy italic mt-2 bg-gray-50 p-2 rounded hidden"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex items-start gap-3 max-w-5xl mx-auto w-full mb-12">
+      <i class="fa-solid fa-circle-info text-blue-600 text-xl mt-0.5"></i>
+      <p class="text-sm text-blue-800 leading-relaxed">
+        <strong class="font-bold">Prototype only.</strong> Demonstration prototype using sample complaint data. No real government complaint records or geographical coordinates are used.
+      </p>
+    </div>
+
+  </main>
+
+  <!-- ========== SCRIPT ========== -->
+  <script>
+    (function() {
+      // ---- 1. Build Sidebar ----
+      const icons = ['fa-star', 'fa-bolt', 'fa-shield-halved', 'fa-chart-line', 'fa-gears', 'fa-bell', 'fa-book', 'fa-headset', 'fa-database', 'fa-link'];
+      const sidebarNav = document.getElementById('sidebarNav');
+      if (sidebarNav) {
+        for (let i = 1; i <= 10; i++) {
+          const li = document.createElement('li');
+          const isActive = (i === 6);
+          li.innerHTML = `
+            <a href="feature${i}.html" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:text-navy hover:bg-blue-50 text-sm font-semibold transition-colors group ${isActive ? 'active text-navy bg-blue-50' : ''}">
+              <div class="w-8 h-8 rounded-md ${isActive ? 'bg-orange text-white' : 'bg-blue-50 text-blue-700'} border ${isActive ? 'border-orange' : 'border-blue-100'} flex items-center justify-center group-hover:bg-orange group-hover:text-white group-hover:border-orange transition-colors">
+                <i class="fa-solid ${icons[i-1]} text-xs"></i>
+              </div>
+              Feature ${i}
+              <i class="fa-solid fa-chevron-right ml-auto ${isActive ? 'text-orange' : 'text-gray-300'} text-[10px] group-hover:text-orange transition-colors"></i>
+            </a>`;
+          sidebarNav.appendChild(li);
+        }
+      }
+
+      // ---- 2. Leaflet Map Initialization ----
+      // Approximate coordinates for Uttarakhand districts
+      const DISTRICT_COORDS = {
+        "Tehri Garhwal": [30.3800, 78.4800],
+        "Dehradun": [30.3165, 78.0322],
+        "Uttarkashi": [30.7300, 78.4500],
+        "Chamoli": [30.4000, 79.3000],
+        "Rudraprayag": [30.2800, 78.9800]
+      };
+
+      // Initialize map centered on Uttarakhand
+      const map = L.map('map').setView([30.0668, 79.0193], 8);
+
+      // Add OpenStreetMap tiles
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      // Global marker group
+      let markerGroup = L.layerGroup().addTo(map);
+
+      // ---- 3. State & Demo Data ----
+      let complaints = JSON.parse(localStorage.getItem('apuni_gis_data_v3')) || [];
+      let areaRemarks = JSON.parse(localStorage.getItem('apuni_gis_remarks_v3')) || {};
+      let activeDistrict = null;
+
+      const DEMO_DATA = [
+        { id: "UK-2026-1042", category: "Road Damage", district: "Tehri Garhwal", village: "Example Village", description: "Damaged road near government school.", date: "2026-02-10", status: "In Progress", dept: "PWD" },
+        { id: "UK-2026-1043", category: "Water Supply", district: "Dehradun", village: "Rajpur", description: "No water supply for 3 days.", date: "2026-02-11", status: "Pending", dept: "Jal Nigam" },
+        { id: "UK-2026-1044", category: "Drainage", district: "Uttarkashi", village: "Bhatwari", description: "Blocked drain causing overflow.", date: "2026-02-12", status: "Escalated", dept: "Municipal" },
+        { id: "UK-2026-1045", category: "Road Damage", district: "Tehri Garhwal", village: "Chamba", description: "Potholes on main highway.", date: "2026-02-12", status: "Pending", dept: "PWD" },
+        { id: "UK-2026-1046", category: "Electricity", district: "Dehradun", village: "Clement Town", description: "Transformer sparking.", date: "2026-02-13", status: "Resolved", dept: "UPCL" },
+        { id: "UK-2026-1047", category: "Road Damage", district: "Tehri Garhwal", village: "Narendranagar", description: "Road caved in after rain.", date: "2026-02-14", status: "In Progress", dept: "PWD" },
+        { id: "UK-2026-1048", category: "Water Supply", district: "Dehradun", village: "Vikasnagar", description: "Dirty water supplied.", date: "2026-02-14", status: "Pending", dept: "Jal Nigam" },
+        { id: "UK-2026-1049", category: "Electricity", district: "Chamoli", village: "Joshimath", description: "Frequent power cuts.", date: "2026-02-15", status: "Pending", dept: "UPCL" },
+        { id: "UK-2026-1050", category: "Road Damage", district: "Rudraprayag", village: "Kedarnath Road", description: "Landslide blocking road.", date: "2026-02-15", status: "Escalated", dept: "BRO" },
+        { id: "UK-2026-1051", category: "Drainage", district: "Dehradun", village: "Patel Nagar", description: "Sewage overflow on street.", date: "2026-02-16", status: "Resolved", dept: "Municipal" }
+      ];
+
+      // ---- 4. Demo Logic ----
+      window.loadDemoData = function() {
+        complaints = [...DEMO_DATA];
+        localStorage.setItem('apuni_gis_data_v3', JSON.stringify(complaints));
+        renderDashboard();
+        alert("10 demo complaints loaded across 5 districts.");
+      };
+
+      window.resetDemo = function() {
+        if(confirm("Clear all data and reset?")) {
+          complaints = [];
+          areaRemarks = {};
+          localStorage.removeItem('apuni_gis_data_v3');
+          localStorage.removeItem('apuni_gis_remarks_v3');
+          activeDistrict = null;
+          renderDashboard();
+        }
+      };
+
+      // ---- 5. Main Render Function ----
+      function renderDashboard() {
+        const catFilter = document.getElementById('filter-category').value;
+        const statFilter = document.getElementById('filter-status').value;
+
+        // Filter data
+        const filtered = complaints.filter(c => {
+          const matchCat = catFilter === 'All' || c.category === catFilter;
+          const matchStat = statFilter === 'All' || c.status === statFilter;
+          return matchCat && matchStat;
+        });
+
+        // Update Stats
+        document.getElementById('stat-total').innerText = filtered.length;
+        document.getElementById('stat-pending').innerText = filtered.filter(c => c.status === 'Pending').length;
+        document.getElementById('stat-escalated').innerText = filtered.filter(c => c.status === 'Escalated').length;
+        document.getElementById('stat-resolved').innerText = filtered.filter(c => c.status === 'Resolved').length;
+
+        // Group by District
+        const grouped = {};
+        Object.keys(DISTRICT_COORDS).forEach(d => grouped[d] = { total: 0, pending: 0, resolved: 0, complaints: [] });
+        
+        filtered.forEach(c => {
+          if(grouped[c.district]) {
+            grouped[c.district].total++;
+            if(c.status === 'Pending' || c.status === 'In Progress') grouped[c.district].pending++;
+            if(c.status === 'Resolved') grouped[c.district].resolved++;
+            grouped[c.district].complaints.push(c);
+          }
+        });
+
+        // Clear existing markers
+        markerGroup.clearLayers();
+
+        // Add Markers to Map
+        Object.keys(DISTRICT_COORDS).forEach(dName => {
+          const data = grouped[dName];
+          // Skip rendering if no complaints match the current filter (except when All is selected, show them anyway? No, just hide empty ones)
+          if(data.total === 0) return; 
+
+          const coords = DISTRICT_COORDS[dName];
+          
+          let color = '#10b981'; // Green (Low)
+          let size = 24;
+          if(data.total >= 3) { color = '#f59e0b'; size = 32; } // Orange (Med)
+          if(data.total >= 5) { color = '#dc2626'; size = 40; } // Red (High)
+
+          // Custom marker icon using L.divIcon
+          const customIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div class="marker-bubble" style="background-color: ${color}; width: ${size}px; height: ${size}px; font-size: ${size/2.5}px;">${data.total}</div>`,
+            iconSize: [size, size],
+            iconAnchor: [size/2, size/2]
+          });
+
+          const marker = L.marker(coords, { icon: customIcon }).addTo(markerGroup);
+          
+          // Tooltip
+          marker.bindTooltip(`${dName}: ${data.total} complaints`, {direction: 'top', className: 'font-bold text-xs'});
+          
+          // Click event
+          marker.on('click', function() {
+            selectDistrict(dName);
+          });
+        });
+
+        // Render Hotspot List
+        const hotspotList = document.getElementById('hotspot-list');
+        const sortedDistricts = Object.keys(grouped)
+          .map(name => ({ name, ...grouped[name] }))
+          .filter(d => d.total > 0)
+          .sort((a,b) => b.total - a.total);
+
+        if(sortedDistricts.length === 0) {
+          hotspotList.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No hotspots found for this filter.</p>';
+        } else {
+          hotspotList.innerHTML = sortedDistricts.map((d, index) => `
+            <div onclick="selectDistrict('${d.name}')" class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-200 transition">
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-full bg-gray-100 text-gray-600 text-xs font-bold flex items-center justify-center">${index+1}</span>
+                <span class="font-bold text-sm text-navy">${d.name}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-orange">${d.total} Issues</span>
+                <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Update Details Panel
+        if (activeDistrict) {
+          renderPanel(activeDistrict, grouped[activeDistrict]);
+        } else {
+          document.getElementById('panel-content').classList.add('hidden');
+          document.getElementById('panel-empty').classList.remove('hidden');
+        }
+      }
+
+      // ---- 6. Panel Logic ----
+      window.selectDistrict = function(districtName) {
+        activeDistrict = districtName;
+        const catFilter = document.getElementById('filter-category').value;
+        const statFilter = document.getElementById('filter-status').value;
+        
+        const filtered = complaints.filter(c => {
+          const matchCat = catFilter === 'All' || c.category === catFilter;
+          const matchStat = statFilter === 'All' || c.status === statFilter;
+          return matchCat && matchStat && c.district === districtName;
+        });
+
+        const data = {
+          total: filtered.length,
+          pending: filtered.filter(c => c.status === 'Pending' || c.status === 'In Progress').length,
+          resolved: filtered.filter(c => c.status === 'Resolved').length,
+          complaints: filtered
+        };
+
+        renderPanel(districtName, data);
+        
+        // Pan map to district
+        if(DISTRICT_COORDS[districtName]) {
+          map.setView(DISTRICT_COORDS[districtName], 10, { animate: true });
+        }
+      };
+
+      function renderPanel(districtName, data) {
+        document.getElementById('panel-empty').classList.add('hidden');
+        document.getElementById('panel-content').classList.remove('hidden');
+
+        document.getElementById('panel-district').innerText = districtName;
+        document.getElementById('panel-total').innerText = data.total + " Total Complaints";
+        document.getElementById('panel-pending').innerText = data.pending;
+        document.getElementById('panel-resolved').innerText = data.resolved;
+
+        const list = document.getElementById('panel-complaints-list');
+        if(data.complaints.length === 0) {
+          list.innerHTML = '<p class="text-xs text-gray-500 italic">No complaints match current filters.</p>';
+        } else {
+          list.innerHTML = data.complaints.map(c => `
+            <div class="bg-gray-50 border border-gray-200 rounded p-2 text-xs">
+              <div class="flex justify-between font-bold text-navy mb-1">
+                <span>${c.id}</span>
+                <span class="${c.status === 'Resolved' ? 'text-green-600' : c.status === 'Escalated' ? 'text-red-600' : 'text-orange'}">${c.status}</span>
+              </div>
+              <p class="font-semibold text-gray-700">${c.category}</p>
+              <p class="text-gray-500 mt-0.5">${c.village}</p>
+            </div>
+          `).join('');
+        }
+
+        // Load Remark
+        const remInput = document.getElementById('panel-remark-input');
+        const remDisplay = document.getElementById('panel-remark-display');
+        if(areaRemarks[districtName]) {
+          remInput.value = areaRemarks[districtName];
+          remDisplay.innerText = areaRemarks[districtName];
+          remDisplay.classList.remove('hidden');
+        } else {
+          remInput.value = '';
+          remDisplay.classList.add('hidden');
+        }
+      }
+
+      window.saveAreaRemark = function() {
+        if(!activeDistrict) return;
+        const val = document.getElementById('panel-remark-input').value;
+        if(!val) return;
+        
+        areaRemarks[activeDistrict] = val;
+        localStorage.setItem('apuni_gis_remarks_v3', JSON.stringify(areaRemarks));
+        
+        document.getElementById('panel-remark-display').innerText = val;
+        document.getElementById('panel-remark-display').classList.remove('hidden');
+        alert("Monitoring remark saved for " + activeDistrict);
+      };
+
+      // Init render & Auto-load demo for immediate map visibility
+      if (complaints.length === 0) {
+        complaints = [...DEMO_DATA];
+        localStorage.setItem('apuni_gis_data_v3', JSON.stringify(complaints));
+      }
+      
+      // Wait for map to be ready then render
+      setTimeout(renderDashboard, 200);
+      
+      // Fix map sizing issue after load
+      window.addEventListener('resize', () => map.invalidateSize());
+      setTimeout(() => map.invalidateSize(), 500);
+
+    })();
+  </script>
+</body>
+</html>

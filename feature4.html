@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apuni Sarkar Smart Assist – Feature 4</title>
+  <!-- Tailwind + FontAwesome + Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0f2b46',
+            orange: '#d35400',
+            'orange-dark': '#b34700',
+            govgreen: '#0f766e',
+            'govgreen-light': '#ccfbf1'
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    /* ----- Base + Sidebar styles ----- */
+    :root {
+      --navy: #0f2b46;
+      --orange: #d35400;
+      --bg: #f4f6f8;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      color: #1e293b;
+    }
+    body > aside {
+      border-right: 1px solid #cbdcf0;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      width: 16rem;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05);
+      z-index: 30;
+    }
+    body > main {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      background-color: #f4f6f8;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    /* Sidebar nav link style */
+    .nav-link {
+      position: relative;
+      transition: all .25s ease;
+    }
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--orange);
+      transform: scaleY(0);
+      transition: transform .25s ease;
+      border-radius: 0 4px 4px 0;
+    }
+    .nav-link:hover::before,
+    .nav-link.active::before {
+      transform: scaleY(1);
+    }
+
+    /* ---------- FLOWCHART STYLES ---------- */
+    .flow-container {
+      position: relative;
+      padding: 1rem 0;
+    }
+    .flow-line {
+      position: absolute;
+      left: 2rem;
+      top: 3rem;
+      bottom: 3rem;
+      width: 3px;
+      background: #e2e8f0;
+      z-index: 0;
+    }
+    .flow-step {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .flow-step:last-child { margin-bottom: 0; }
+    .flow-dot {
+      width: 4.25rem;
+      height: 4.25rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      border: 4px solid white;
+      box-shadow: 0 0 0 3px #e2e8f0;
+      z-index: 10;
+      transition: all 0.3s ease;
+    }
+    .flow-step:hover .flow-dot {
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 0 0 0 4px #d35400;
+    }
+    .flow-content {
+      background: white;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      flex: 1;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .flow-content::before {
+      content: '';
+      position: absolute;
+      left: -10px;
+      top: 1.75rem;
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-right: 10px solid white;
+      filter: drop-shadow(-2px 0 0 #e2e8f0);
+    }
+    .flow-step:hover .flow-content {
+      transform: translateX(6px);
+      border-color: #d35400;
+      box-shadow: 0 10px 25px -5px rgba(211,84,0,0.15);
+    }
+    .flow-step:hover .flow-content::before {
+      border-right-color: #d35400;
+    }
+
+    @media (max-width: 768px) {
+      body { overflow: auto; }
+      body > aside { width: 76px; }
+      body > aside h2, body > aside nav a { font-size: 0; }
+      body > aside nav a { justify-content: center; padding-left: 8px; padding-right: 8px; }
+      body > aside nav a > div { margin: 0; }
+      body > aside nav a > i { display: none; }
+      body > aside > div:first-child { justify-content: center; padding: 16px 8px; }
+      body > aside > div:last-child { display: none; }
+      
+      .flow-line { left: 1.5rem; }
+      .flow-dot { width: 3rem; height: 3rem; font-size: 1.2rem; border-width: 3px; }
+      .flow-step { gap: 1rem; }
+    }
+
+    main { padding: 1.5rem 2rem; }
+    @media (max-width: 768px) { main { padding: 1rem; } }
+
+    .prototype-badge {
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.25rem 1rem;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+      border: 1px solid #fcd34d;
+      display: inline-block;
+    }
+
+    /* Tabs */
+    .tab-btn {
+      padding: 0.6rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #64748b;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: #0f2b46; background: #f8fafc; }
+    .tab-btn.active { color: #0f2b46; border-bottom-color: #d35400; background: white; }
+
+    /* Status Badges */
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: inline-block;
+    }
+    .st-registered { background: #f1f5f9; color: #475569; }
+    .st-assigned { background: #e0f2fe; color: #0284c7; }
+    .st-inprogress { background: #fef3c7; color: #d97706; }
+    .st-resolution { background: #fae8ff; color: #c026d3; }
+    .st-verification { background: #ffedd5; color: #ea580c; }
+    .st-closed { background: #dcfce7; color: #16a34a; }
+    .st-escalated { background: #fee2e2; color: #dc2626; }
+    .st-reopened { background: #fce7f3; color: #db2777; }
+  </style>
+</head>
+<body>
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside>
+    <div class="p-5 border-b border-blue-100 bg-gradient-to-r from-blue-100 via-blue-50 to-white flex items-center gap-3">
+      <div class="bg-orange text-white p-2.5 rounded-lg shadow-md">
+        <i class="fa-solid fa-bars text-sm"></i>
+      </div>
+      <h2 class="text-base font-extrabold text-navy tracking-wider">NAVIGATION</h2>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-4">
+      <ul id="sidebarNav" class="space-y-1 px-3"></ul>
+    </nav>
+    <div class="p-4 border-t border-blue-100 bg-blue-50/70 text-center">
+      <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Prayas 2026 Prototype</p>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main>
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div>
+        <h1 class="text-3xl font-extrabold text-navy tracking-tight">Feature 4: Citizen-Verified Resolution</h1>
+        <p class="text-gray-500 text-sm mt-1">Apuni Sarkar Smart Assist – Transparent complaint tracking & closure</p>
+      </div>
+      <span class="prototype-badge"><i class="fa-regular fa-flask mr-1"></i> PROTOTYPE DEMO</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-gray-200 w-full max-w-4xl bg-gray-50 rounded-t-2xl overflow-hidden shadow-sm mx-auto">
+      <button class="tab-btn flex-1 text-center active" onclick="switchTab(0)">
+        <i class="fa-solid fa-diagram-project text-orange mr-1"></i> Process Flow
+      </button>
+      <button class="tab-btn flex-1 text-center" onclick="switchTab(1)">
+        <i class="fa-solid fa-desktop text-navy mr-1"></i> Live Interactive Demo
+      </button>
+    </div>
+
+    <!-- Tab Content 1: Process Flowchart -->
+    <div id="tab-content-0" class="w-full flex justify-center bg-white border-x border-b border-gray-200 rounded-b-2xl p-6 shadow-sm mx-auto max-w-4xl">
+      <div class="w-full">
+        <div class="mb-6">
+          <h2 class="text-2xl font-extrabold text-navy">How the Verification System Works</h2>
+          <p class="text-gray-500 text-sm mt-1">Ensuring complaints aren't closed until the citizen confirms resolution.</p>
+        </div>
+
+        <div class="flow-container">
+          <div class="flow-line"></div>
+
+          <!-- Step 1 -->
+          <div class="flow-step">
+            <div class="flow-dot bg-blue-100 text-blue-600"><i class="fa-solid fa-file-signature"></i></div>
+            <div class="flow-content">
+              <span class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1 block">Step 1: Registration</span>
+              <h3 class="font-bold text-navy text-lg mb-2">Citizen Files a Complaint</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">The citizen submits details and an image. The system generates a unique <strong>Complaint ID</strong> and a secret <strong>Verification Code</strong> (only the citizen knows this code).</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="flow-step">
+            <div class="flow-dot bg-orange-100 text-orange"><i class="fa-solid fa-hard-hat"></i></div>
+            <div class="flow-content">
+              <span class="text-xs font-bold text-orange uppercase tracking-wider mb-1 block">Step 2: Official Action</span>
+              <h3 class="font-bold text-navy text-lg mb-2">Department Resolves the Issue</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">The assigned official views the complaint, updates the status to "In Progress", fixes the issue, uploads <strong>Resolution Evidence (Photo)</strong>, and submits it for verification.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="flow-step">
+            <div class="flow-dot bg-purple-100 text-purple-600"><i class="fa-solid fa-user-check"></i></div>
+            <div class="flow-content">
+              <span class="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1 block">Step 3: Citizen Verification</span>
+              <h3 class="font-bold text-navy text-lg mb-2">The Final Check</h3>
+              <p class="text-gray-600 text-sm leading-relaxed mb-3">The citizen receives a notification. They review the official's proof. <strong>Officials cannot close the complaint.</strong> The citizen must enter their secret Verification Code to close it.</p>
+              <div class="flex gap-2 text-sm">
+                <span class="bg-green-100 text-green-700 px-2 py-1 rounded font-medium"><i class="fa-solid fa-check"></i> Resolved: Enter Code & Close</span>
+                <span class="bg-red-100 text-red-700 px-2 py-1 rounded font-medium"><i class="fa-solid fa-xmark"></i> Not Resolved: Reopen</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="flow-step">
+            <div class="flow-dot bg-red-100 text-red-600"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="flow-content">
+              <span class="text-xs font-bold text-red-600 uppercase tracking-wider mb-1 block">Step 4: Deadline & Escalation</span>
+              <h3 class="font-bold text-navy text-lg mb-2">Accountability Mechanism</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">Every complaint has a 10-day deadline. If the official fails to submit a resolution in time, the system automatically flags it as <strong>Overdue</strong> and escalates it to a Senior Officer.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Content 2: Interactive Demo -->
+    <div id="tab-content-1" class="w-full hidden bg-gray-50 border-x border-b border-gray-200 rounded-b-2xl p-4 md:p-6 shadow-sm mx-auto max-w-4xl">
+      
+      <!-- Demo Controls -->
+      <div class="flex flex-wrap justify-between items-center bg-white p-4 rounded-xl border border-gray-200 mb-6 shadow-sm">
+        <div class="flex gap-2">
+          <button onclick="loadDemo()" class="bg-navy text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-900 transition-colors shadow"><i class="fa-solid fa-download mr-1"></i> Load Demo Complaint</button>
+          <button onclick="resetDemo()" class="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors"><i class="fa-solid fa-rotate-left mr-1"></i> Reset Demo</button>
+        </div>
+        <div class="flex gap-2 mt-2 sm:mt-0">
+          <button onclick="switchDemoView('citizen')" id="btn-view-citizen" class="px-4 py-2 rounded-lg text-sm font-bold bg-orange text-white shadow">Citizen Portal</button>
+          <button onclick="switchDemoView('official')" id="btn-view-official" class="px-4 py-2 rounded-lg text-sm font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50">Official Dashboard</button>
+        </div>
+      </div>
+
+      <!-- ================= CITIZEN VIEW ================= -->
+      <div id="view-citizen" class="space-y-6">
+        
+        <!-- Registration Form (Hidden if demo loaded, or show if empty) -->
+        <div id="citizen-reg-form" class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          <h3 class="text-xl font-bold text-navy mb-4">Register a New Complaint</h3>
+          <form onsubmit="registerComplaint(event)" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div><label class="text-xs font-bold text-gray-600 mb-1 block">Full Name</label><input required type="text" id="reg-name" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange"></div>
+              <div><label class="text-xs font-bold text-gray-600 mb-1 block">Mobile Number</label><input required type="text" id="reg-mobile" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange"></div>
+              <div>
+                <label class="text-xs font-bold text-gray-600 mb-1 block">Category</label>
+                <select id="reg-category" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange">
+                  <option>Road Damage</option><option>Water Supply</option><option>Electricity</option><option>Drainage</option><option>Public Infrastructure</option><option>Other</option>
+                </select>
+              </div>
+              <div><label class="text-xs font-bold text-gray-600 mb-1 block">District</label><input required type="text" id="reg-district" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange"></div>
+            </div>
+            <div><label class="text-xs font-bold text-gray-600 mb-1 block">Village / Area</label><input required type="text" id="reg-village" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange"></div>
+            <div><label class="text-xs font-bold text-gray-600 mb-1 block">Description</label><textarea required id="reg-desc" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange"></textarea></div>
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center bg-gray-50">
+              <i class="fa-solid fa-camera text-gray-400 text-2xl mb-2"></i>
+              <p class="text-xs text-gray-500">Upload Image of Issue (Simulated)</p>
+            </div>
+            <button type="submit" class="w-full bg-orange text-white font-bold py-3 rounded-lg hover:bg-orange-dark transition-colors shadow">Register Complaint</button>
+          </form>
+        </div>
+
+        <!-- Tracking Section -->
+        <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          <h3 class="text-xl font-bold text-navy mb-4">Track Your Complaint</h3>
+          
+          <div id="citizen-tracking-result" class="hidden space-y-6">
+            <!-- ID & Code Banner -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div>
+                <p class="text-xs text-blue-600 font-bold uppercase">Complaint ID</p>
+                <p id="disp-id" class="text-2xl font-mono font-extrabold text-navy">UK-2026-XXXX</p>
+              </div>
+              <div class="text-center md:text-right">
+                <p class="text-xs text-blue-600 font-bold uppercase">Secret Verification Code</p>
+                <p id="disp-code" class="text-2xl font-mono font-extrabold text-orange tracking-widest">XXXXXX</p>
+              </div>
+            </div>
+
+            <!-- Details Card -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <p class="text-xs font-bold text-gray-500 mb-1">Issue Details</p>
+                <p class="text-sm font-semibold text-navy" id="disp-category">Road Damage</p>
+                <p class="text-sm text-gray-600 mt-1" id="disp-location">Village, District</p>
+                <p class="text-sm text-gray-600 mt-2 italic" id="disp-description">"Road is broken..."</p>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <p class="text-xs font-bold text-gray-500 mb-1">Status & Deadline</p>
+                <p id="disp-status-badge" class="status-badge st-registered mb-2 inline-block">Registered</p>
+                <p class="text-sm text-gray-600">Deadline: <strong id="disp-deadline">Day 10</strong></p>
+              </div>
+            </div>
+
+            <!-- Timeline -->
+            <div>
+              <p class="text-sm font-bold text-navy mb-3">Complaint Timeline</p>
+              <div class="flex justify-between text-xs text-gray-500 font-semibold relative">
+                <div class="absolute top-2 left-0 right-0 h-1 bg-gray-200 -z-10"></div>
+                <div class="flex flex-col items-center gap-1"><div id="tl-1" class="w-5 h-5 rounded-full bg-gray-300 border-2 border-white"></div>Registered</div>
+                <div class="flex flex-col items-center gap-1"><div id="tl-2" class="w-5 h-5 rounded-full bg-gray-300 border-2 border-white"></div>Assigned</div>
+                <div class="flex flex-col items-center gap-1"><div id="tl-3" class="w-5 h-5 rounded-full bg-gray-300 border-2 border-white"></div>In Progress</div>
+                <div class="flex flex-col items-center gap-1"><div id="tl-4" class="w-5 h-5 rounded-full bg-gray-300 border-2 border-white"></div>Resolution</div>
+                <div class="flex flex-col items-center gap-1"><div id="tl-5" class="w-5 h-5 rounded-full bg-gray-300 border-2 border-white"></div>Verification</div>
+                <div class="flex flex-col items-center gap-1"><div id="tl-6" class="w-5 h-5 rounded-full bg-gray-300 border-2 border-white"></div>Closed</div>
+              </div>
+            </div>
+
+            <!-- Official Resolution (If submitted) -->
+            <div id="citizen-resolution-box" class="hidden border-2 border-purple-200 bg-purple-50 rounded-lg p-5">
+              <h4 class="font-bold text-purple-800 text-lg mb-2"><i class="fa-solid fa-clipboard-check mr-1"></i> Official Resolution Submitted</h4>
+              <p class="text-sm text-gray-700 mb-3">The department claims this issue is resolved.</p>
+              <div class="bg-white p-3 rounded border border-purple-100 mb-3">
+                <p class="text-xs font-bold text-gray-500 uppercase">Official Remarks:</p>
+                <p id="disp-off-remarks" class="text-sm text-navy italic">"Road has been patched."</p>
+                <div class="mt-2 h-20 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500"><i class="fa-solid fa-image mr-1"></i> Resolution Photo Evidence</div>
+              </div>
+              <p class="text-sm font-bold text-navy mb-2">Is the issue actually resolved?</p>
+              <div class="flex gap-2">
+                <button onclick="showVerifyForm()" class="flex-1 bg-green-600 text-white font-bold py-2 rounded shadow hover:bg-green-700">Yes, Issue Resolved</button>
+                <button onclick="showRejectForm()" class="flex-1 bg-red-600 text-white font-bold py-2 rounded shadow hover:bg-red-700">No, Not Resolved</button>
+              </div>
+            </div>
+
+            <!-- Verification Form -->
+            <div id="verify-form" class="hidden bg-green-50 border border-green-200 rounded-lg p-5">
+              <h4 class="font-bold text-green-800 mb-3">Verify & Close Complaint</h4>
+              <div class="flex gap-2 mb-2">
+                <input type="text" id="verify-id-input" placeholder="Enter Complaint ID" class="w-full border rounded px-3 py-2 text-sm">
+                <input type="text" id="verify-code-input" placeholder="Enter Code" class="w-full border rounded px-3 py-2 text-sm">
+              </div>
+              <button onclick="closeComplaint()" class="w-full bg-green-600 text-white font-bold py-2 rounded shadow hover:bg-green-700">Verify & Close</button>
+            </div>
+
+            <!-- Reject Form -->
+            <div id="reject-form" class="hidden bg-red-50 border border-red-200 rounded-lg p-5">
+              <h4 class="font-bold text-red-800 mb-3">Why is the issue not resolved?</h4>
+              <select id="reject-reason" class="w-full border rounded px-3 py-2 text-sm mb-2">
+                <option>Completely unresolved</option>
+                <option>Partially resolved</option>
+                <option>Evidence does not match reality</option>
+                <option>Other</option>
+              </select>
+              <textarea id="reject-remarks" rows="2" class="w-full border rounded px-3 py-2 text-sm mb-2" placeholder="Additional details..."></textarea>
+              <button onclick="reopenComplaint()" class="w-full bg-red-600 text-white font-bold py-2 rounded shadow hover:bg-red-700">Reject & Reopen</button>
+            </div>
+            
+            <!-- Closed Message -->
+            <div id="closed-box" class="hidden bg-green-100 border border-green-300 text-green-800 p-4 rounded-lg text-center font-bold">
+              <i class="fa-solid fa-circle-check text-2xl mb-1"></i>
+              <p>Complaint Verified and Closed Successfully!</p>
+            </div>
+          </div>
+          
+          <div id="citizen-empty-state" class="text-center py-10">
+            <i class="fa-solid fa-search text-gray-300 text-4xl mb-3"></i>
+            <p class="text-gray-500">No active complaints. Register one above or load the demo.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= OFFICIAL VIEW ================= -->
+      <div id="view-official" class="hidden space-y-6">
+        
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div class="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-navy">Department Dashboard</h3>
+            <button onclick="simulateDeadline()" class="bg-red-100 text-red-700 px-3 py-1.5 rounded text-xs font-bold hover:bg-red-200 border border-red-200 shadow-sm transition-colors"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Simulate Deadline Expiry</button>
+          </div>
+          
+          <div id="official-empty-state" class="text-center py-10">
+            <p class="text-gray-500">No complaints loaded. Click "Load Demo Complaint" above.</p>
+          </div>
+
+          <div id="official-complaint-card" class="hidden p-6 space-y-4">
+            <div class="flex justify-between items-start">
+              <div>
+                <h4 class="text-xl font-bold text-navy" id="off-id">UK-2026-1042</h4>
+                <p class="text-sm text-gray-500" id="off-citizen">Rahul Sharma</p>
+              </div>
+              <span id="off-status-badge" class="status-badge st-registered">Registered</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 text-sm bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <div><span class="text-gray-500 block text-xs">Category</span> <strong id="off-category">Road Damage</strong></div>
+              <div><span class="text-gray-500 block text-xs">Location</span> <strong id="off-location">Village, District</strong></div>
+              <div class="col-span-2"><span class="text-gray-500 block text-xs">Description</span> <span id="off-desc" class="text-gray-700 italic">"Road is broken..."</span></div>
+            </div>
+
+            <!-- Escalation Warning -->
+            <div id="off-escalation-warning" class="hidden bg-red-50 border-l-4 border-red-500 p-3 text-sm text-red-800 font-semibold">
+              <i class="fa-solid fa-triangle-exclamation mr-1"></i> <span id="off-escalation-text">Complaint overdue. Escalated to Senior Officer.</span>
+            </div>
+
+            <!-- Reopened Warning -->
+            <div id="off-reopened-warning" class="hidden bg-pink-50 border-l-4 border-pink-500 p-3 text-sm text-pink-800 font-semibold">
+              <i class="fa-solid fa-rotate-left mr-1"></i> Citizen rejected resolution. <span id="off-reject-reason" class="font-normal italic"></span>
+            </div>
+
+            <!-- Action Form -->
+            <div id="off-action-form" class="border-t border-gray-200 pt-4">
+              <h4 class="font-bold text-navy mb-3 text-sm">Update Complaint Progress</h4>
+              <div class="space-y-3">
+                <div>
+                  <label class="text-xs font-bold text-gray-600 block mb-1">Official Remarks</label>
+                  <textarea id="off-remarks-input" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange" placeholder="E.g. Road patched by team..."></textarea>
+                </div>
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center bg-gray-50">
+                  <p class="text-xs text-gray-500"><i class="fa-solid fa-camera mr-1"></i> Upload Resolution Photo (Simulated)</p>
+                </div>
+                <button onclick="submitResolution()" class="w-full bg-purple-600 text-white font-bold py-2.5 rounded-lg hover:bg-purple-700 transition-colors shadow">Submit Resolution for Citizen Verification</button>
+              </div>
+            </div>
+
+            <div id="off-verified-box" class="hidden bg-green-50 border border-green-200 p-4 rounded-lg text-center">
+              <i class="fa-solid fa-shield-check text-green-600 text-2xl mb-1"></i>
+              <p class="text-green-800 font-bold">Complaint successfully verified and closed by Citizen.</p>
+            </div>
+            
+            <div id="off-waiting-box" class="hidden bg-orange-50 border border-orange-200 p-4 rounded-lg text-center">
+              <i class="fa-solid fa-hourglass-half text-orange text-2xl mb-1"></i>
+              <p class="text-orange-800 font-bold">Awaiting Citizen Verification...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex items-start gap-3 max-w-4xl mx-auto w-full mt-6 mb-12">
+      <i class="fa-solid fa-circle-info text-blue-600 text-xl mt-0.5"></i>
+      <p class="text-sm text-blue-800 leading-relaxed">
+        <strong class="font-bold">Prototype only.</strong> Demonstration prototype using sample data. No real government complaints are submitted or closed.
+      </p>
+    </div>
+
+  </main>
+
+  <!-- ========== SCRIPT ========== -->
+  <script>
+    (function() {
+      // ---- 1. Build Sidebar ----
+      const icons = ['fa-star', 'fa-bolt', 'fa-shield-halved', 'fa-chart-line', 'fa-gears', 'fa-bell', 'fa-book', 'fa-headset', 'fa-database', 'fa-link'];
+      const sidebarNav = document.getElementById('sidebarNav');
+      if (sidebarNav) {
+        for (let i = 1; i <= 10; i++) {
+          const li = document.createElement('li');
+          const isActive = (i === 4);
+          li.innerHTML = `
+            <a href="feature${i}.html" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:text-navy hover:bg-blue-50 text-sm font-semibold transition-colors group ${isActive ? 'active text-navy bg-blue-50' : ''}">
+              <div class="w-8 h-8 rounded-md ${isActive ? 'bg-orange text-white' : 'bg-blue-50 text-blue-700'} border ${isActive ? 'border-orange' : 'border-blue-100'} flex items-center justify-center group-hover:bg-orange group-hover:text-white group-hover:border-orange transition-colors">
+                <i class="fa-solid ${icons[i-1]} text-xs"></i>
+              </div>
+              Feature ${i}
+              <i class="fa-solid fa-chevron-right ml-auto ${isActive ? 'text-orange' : 'text-gray-300'} text-[10px] group-hover:text-orange transition-colors"></i>
+            </a>`;
+          sidebarNav.appendChild(li);
+        }
+      }
+
+      // ---- 2. Tab Switching Logic ----
+      window.switchTab = function(index) {
+        document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === index));
+        document.getElementById('tab-content-0').classList.toggle('hidden', index !== 0);
+        document.getElementById('tab-content-1').classList.toggle('hidden', index !== 1);
+      };
+
+      // ---- 3. Demo View Switching ----
+      window.switchDemoView = function(view) {
+        document.getElementById('view-citizen').classList.toggle('hidden', view !== 'citizen');
+        document.getElementById('view-official').classList.toggle('hidden', view !== 'official');
+        
+        const btnC = document.getElementById('btn-view-citizen');
+        const btnO = document.getElementById('btn-view-official');
+        if (view === 'citizen') {
+          btnC.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-orange text-white shadow';
+          btnO.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50';
+        } else {
+          btnO.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-orange text-white shadow';
+          btnC.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50';
+        }
+        renderApp();
+      };
+
+      // ---- 4. State Management ----
+      let complaint = JSON.parse(localStorage.getItem('apuni_complaint')) || null;
+
+      function saveState() {
+        localStorage.setItem('apuni_complaint', JSON.stringify(complaint));
+        renderApp();
+      }
+
+      window.resetDemo = function() {
+        if(confirm("Clear all data and reset demo?")) {
+          localStorage.removeItem('apuni_complaint');
+          complaint = null;
+          renderApp();
+          switchDemoView('citizen');
+          document.getElementById('citizen-tracking-result').classList.add('hidden');
+        }
+      };
+
+      window.loadDemo = function() {
+        complaint = {
+          id: "UK-2026-1042",
+          citizenName: "Rahul Sharma",
+          mobile: "9876543210",
+          category: "Road Damage",
+          district: "Tehri Garhwal",
+          village: "Example Village",
+          description: "The road in our village has been damaged for several days and needs repair.",
+          code: "583921",
+          status: "Registered",
+          dept: "PWD",
+          date: new Date().toLocaleDateString(),
+          deadline: "Day 10",
+          offRemarks: "",
+          citizenFeedback: "",
+          isEscalated: false
+        };
+        saveState();
+        alert("Demo complaint UK-2026-1042 loaded!");
+      };
+
+      window.registerComplaint = function(e) {
+        e.preventDefault();
+        const id = "UK-2026-" + Math.floor(1000 + Math.random() * 9000);
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        complaint = {
+          id: id,
+          citizenName: document.getElementById('reg-name').value,
+          mobile: document.getElementById('reg-mobile').value,
+          category: document.getElementById('reg-category').value,
+          district: document.getElementById('reg-district').value,
+          village: document.getElementById('reg-village').value,
+          description: document.getElementById('reg-desc').value,
+          code: code,
+          status: "Registered",
+          dept: "General Admin",
+          date: new Date().toLocaleDateString(),
+          deadline: "Day 10",
+          offRemarks: "",
+          citizenFeedback: "",
+          isEscalated: false
+        };
+        saveState();
+        alert("Complaint Registered! ID: " + id + " | Code: " + code);
+        document.getElementById('reg-name').value = '';
+        document.getElementById('reg-desc').value = '';
+      };
+
+      // ---- 5. Official Actions ----
+      window.submitResolution = function() {
+        const remarks = document.getElementById('off-remarks-input').value;
+        if(!remarks) return alert("Please enter resolution remarks.");
+        
+        complaint.offRemarks = remarks;
+        complaint.status = "Citizen Verification Pending";
+        saveState();
+        alert("Resolution submitted! Waiting for citizen verification.");
+      };
+
+      window.simulateDeadline = function() {
+        if(!complaint) return;
+        if(complaint.status === 'Verified and Closed') return alert("Complaint is already closed.");
+        
+        complaint.isEscalated = true;
+        complaint.status = "Escalated";
+        saveState();
+        alert("Deadline expired! Complaint escalated to Senior Officer.");
+      };
+
+      // ---- 6. Citizen Actions ----
+      window.showVerifyForm = function() {
+        document.getElementById('verify-form').classList.remove('hidden');
+        document.getElementById('reject-form').classList.add('hidden');
+      };
+
+      window.showRejectForm = function() {
+        document.getElementById('reject-form').classList.remove('hidden');
+        document.getElementById('verify-form').classList.add('hidden');
+      };
+
+      window.closeComplaint = function() {
+        const vId = document.getElementById('verify-id-input').value.trim();
+        const vCode = document.getElementById('verify-code-input').value.trim();
+
+        if (!complaint || vId !== complaint.id) return alert("Invalid Complaint ID.");
+        if (vCode !== complaint.code) return alert("Invalid Verification Code.");
+        if (complaint.status !== "Citizen Verification Pending") return alert("Complaint is not pending verification.");
+        
+        complaint.status = "Verified and Closed";
+        saveState();
+        alert("Thank you! Your complaint is now officially closed.");
+      };
+
+      window.reopenComplaint = function() {
+        const reason = document.getElementById('reject-reason').value;
+        const remarks = document.getElementById('reject-remarks').value;
+        
+        complaint.citizenFeedback = reason + (remarks ? " - " + remarks : "");
+        complaint.status = "Reopened";
+        saveState();
+        alert("Complaint Reopened. Official must take action.");
+        switchDemoView('official');
+      };
+
+      // ---- 7. Render UI ----
+      function renderApp() {
+        const c = complaint;
+        const isLoaded = !!c;
+
+        // --- Citizen View ---
+        if (isLoaded) {
+          document.getElementById('citizen-empty-state').classList.add('hidden');
+          document.getElementById('citizen-reg-form').classList.add('hidden');
+          document.getElementById('citizen-tracking-result').classList.remove('hidden');
+
+          document.getElementById('disp-id').innerText = c.id;
+          document.getElementById('disp-code').innerText = c.code;
+          document.getElementById('disp-category').innerText = c.category;
+          document.getElementById('disp-location').innerText = `${c.village}, ${c.district}`;
+          document.getElementById('disp-description').innerText = `"${c.description}"`;
+          
+          // Status badge
+          const badge = document.getElementById('disp-status-badge');
+          badge.innerText = c.status;
+          badge.className = 'status-badge mb-2 inline-block';
+          if(c.status === 'Registered') badge.classList.add('st-registered');
+          else if(c.status === 'In Progress') badge.classList.add('st-inprogress');
+          else if(c.status === 'Citizen Verification Pending') badge.classList.add('st-verification');
+          else if(c.status === 'Verified and Closed') badge.classList.add('st-closed');
+          else if(c.status === 'Reopened') badge.classList.add('st-reopened');
+          else if(c.status === 'Escalated') badge.classList.add('st-escalated');
+
+          // Timeline dots
+          const states = ['Registered', 'Assigned', 'In Progress', 'Resolution Submitted', 'Citizen Verification Pending', 'Verified and Closed'];
+          let currentIndex = 0;
+          if(c.status === 'Reopened') currentIndex = 2;
+          else if(c.status === 'Escalated') currentIndex = 2;
+          else currentIndex = states.indexOf(c.status) === -1 ? 0 : states.indexOf(c.status);
+
+          for(let i=1; i<=6; i++) {
+            const dot = document.getElementById('tl-'+i);
+            if(i <= currentIndex+1) {
+              dot.className = 'w-5 h-5 rounded-full bg-green-500 border-2 border-white';
+            } else {
+              dot.className = 'w-5 h-5 rounded-full bg-gray-300 border-2 border-white';
+            }
+          }
+
+          // Resolution Box
+          if(c.status === 'Citizen Verification Pending' || c.status === 'Verified and Closed') {
+            document.getElementById('citizen-resolution-box').classList.remove('hidden');
+            document.getElementById('disp-off-remarks').innerText = `"${c.offRemarks}"`;
+            if(c.status === 'Verified and Closed') {
+              document.getElementById('citizen-resolution-box').querySelector('.flex').classList.add('hidden');
+              document.getElementById('closed-box').classList.remove('hidden');
+            }
+          } else {
+            document.getElementById('citizen-resolution-box').classList.add('hidden');
+            document.getElementById('closed-box').classList.add('hidden');
+            document.getElementById('verify-form').classList.add('hidden');
+            document.getElementById('reject-form').classList.add('hidden');
+          }
+
+        } else {
+          document.getElementById('citizen-empty-state').classList.remove('hidden');
+          document.getElementById('citizen-tracking-result').classList.add('hidden');
+          document.getElementById('citizen-reg-form').classList.remove('hidden');
+        }
+
+        // --- Official View ---
+        if (isLoaded) {
+          document.getElementById('official-empty-state').classList.add('hidden');
+          document.getElementById('official-complaint-card').classList.remove('hidden');
+
+          document.getElementById('off-id').innerText = c.id;
+          document.getElementById('off-citizen').innerText = c.citizenName;
+          document.getElementById('off-category').innerText = c.category;
+          document.getElementById('off-location').innerText = `${c.village}, ${c.district}`;
+          document.getElementById('off-desc').innerText = `"${c.description}"`;
+          
+          const offBadge = document.getElementById('off-status-badge');
+          offBadge.innerText = c.status;
+          offBadge.className = 'status-badge';
+          if(c.status === 'Registered') offBadge.classList.add('st-registered');
+          else if(c.status === 'In Progress') offBadge.classList.add('st-inprogress');
+          else if(c.status === 'Citizen Verification Pending') offBadge.classList.add('st-verification');
+          else if(c.status === 'Verified and Closed') offBadge.classList.add('st-closed');
+          else if(c.status === 'Reopened') offBadge.classList.add('st-reopened');
+          else if(c.status === 'Escalated') offBadge.classList.add('st-escalated');
+
+          // Warnings
+          document.getElementById('off-escalation-warning').classList.toggle('hidden', !c.isEscalated);
+          if(c.isEscalated) {
+            document.getElementById('off-escalation-text').innerText = "Complaint overdue. Escalated to Senior Department Officer.";
+          }
+
+          const reOpenWarn = document.getElementById('off-reopened-warning');
+          reOpenWarn.classList.toggle('hidden', c.status !== 'Reopened');
+          if(c.status === 'Reopened') {
+            document.getElementById('off-reject-reason').innerText = c.citizenFeedback;
+          }
+
+          // Action Area
+          const actionForm = document.getElementById('off-action-form');
+          const verifiedBox = document.getElementById('off-verified-box');
+          const waitingBox = document.getElementById('off-waiting-box');
+
+          if(c.status === 'Verified and Closed') {
+            actionForm.classList.add('hidden');
+            verifiedBox.classList.remove('hidden');
+            waitingBox.classList.add('hidden');
+          } else if(c.status === 'Citizen Verification Pending') {
+            actionForm.classList.add('hidden');
+            verifiedBox.classList.add('hidden');
+            waitingBox.classList.remove('hidden');
+          } else {
+            actionForm.classList.remove('hidden');
+            verifiedBox.classList.add('hidden');
+            waitingBox.classList.add('hidden');
+            document.getElementById('off-remarks-input').value = c.offRemarks || '';
+          }
+
+        } else {
+          document.getElementById('official-empty-state').classList.remove('hidden');
+          document.getElementById('official-complaint-card').classList.add('hidden');
+        }
+      }
+
+      // Initial render
+      renderApp();
+    })();
+  </script>
+</body>
+</html>

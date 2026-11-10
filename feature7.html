@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apuni Sarkar Smart Assist – Feature 7</title>
+  <!-- Tailwind + FontAwesome + Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0f2b46',
+            orange: '#d35400',
+            'orange-dark': '#b34700',
+            govgreen: '#0f766e',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    /* ----- Base + Sidebar styles ----- */
+    :root {
+      --navy: #0f2b46;
+      --orange: #d35400;
+      --bg: #f4f6f8;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      color: #1e293b;
+    }
+    body > aside {
+      border-right: 1px solid #cbdcf0;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      width: 16rem;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05);
+      z-index: 30;
+    }
+    body > main {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      background-color: #f4f6f8;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    /* Sidebar nav link style */
+    .nav-link {
+      position: relative;
+      transition: all .25s ease;
+    }
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--orange);
+      transform: scaleY(0);
+      transition: transform .25s ease;
+      border-radius: 0 4px 4px 0;
+    }
+    .nav-link:hover::before,
+    .nav-link.active::before {
+      transform: scaleY(1);
+    }
+
+    /* ---------- UNIQUE OFFLINE JOURNEY EXPLANATION ---------- */
+    .journey-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 768px) {
+      .journey-container { grid-template-columns: 1fr; }
+    }
+    .journey-card {
+      background: white;
+      border-radius: 1rem;
+      border: 1px solid #e2e8f0;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    .journey-card:hover {
+      transform: translateY(-4px);
+      border-color: #d35400;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    }
+    .journey-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 4px;
+      background: #e2e8f0;
+      transition: background 0.3s;
+    }
+    .journey-card:hover::before { background: #d35400; }
+    
+    .journey-step-num {
+      width: 2.5rem; height: 2.5rem;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Status Badges */
+    .badge-draft { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+    .badge-offline { background: #ffedd5; color: #ea580c; border: 1px solid #fed7aa; }
+    .badge-ready { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+    .badge-synced { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+
+    /* Connection Pulse */
+    .pulse-green {
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      animation: pulse-green-anim 2s infinite;
+    }
+    @keyframes pulse-green-anim {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    /* Responsive Sidebar */
+    @media (max-width: 768px) {
+      body { overflow: auto; }
+      body > aside { width: 76px; }
+      body > aside h2, body > aside nav a { font-size: 0; }
+      body > aside nav a { justify-content: center; padding-left: 8px; padding-right: 8px; }
+      body > aside nav a > div { margin: 0; }
+      body > aside nav a > i { display: none; }
+      body > aside > div:first-child { justify-content: center; padding: 16px 8px; }
+      body > aside > div:last-child { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside>
+    <div class="p-5 border-b border-blue-100 bg-gradient-to-r from-blue-100 via-blue-50 to-white flex items-center gap-3">
+      <div class="bg-orange text-white p-2.5 rounded-lg shadow-md">
+        <i class="fa-solid fa-bars text-sm"></i>
+      </div>
+      <h2 class="text-base font-extrabold text-navy tracking-wider">NAVIGATION</h2>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-4">
+      <ul id="sidebarNav" class="space-y-1 px-3"></ul>
+    </nav>
+    <div class="p-4 border-t border-blue-100 bg-blue-50/70 text-center">
+      <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Prayas 2026 Prototype</p>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main>
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div>
+        <h1 class="text-3xl font-extrabold text-navy tracking-tight">Feature 7: Offline & Low-Connectivity Support</h1>
+        <p class="text-gray-500 text-sm mt-1">Apuni Sarkar Smart Assist – Preparing applications without internet</p>
+      </div>
+      <span class="prototype-badge bg-yellow-100 text-yellow-800 border-yellow-300 px-3 py-1 rounded-full text-xs font-bold shadow-sm"><i class="fa-regular fa-flask mr-1"></i> PROTOTYPE DEMO</span>
+    </div>
+
+    <!-- ================= PART 1: EXPLANATION ================= -->
+    <div class="w-full max-w-5xl mx-auto mb-8">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-extrabold text-navy">Preparing Applications from the Mountains</h2>
+        <p class="text-gray-500 text-sm mt-1">How the system empowers citizens in remote areas with poor connectivity.</p>
+      </div>
+
+      <div class="journey-container">
+        <!-- Step 1 -->
+        <div class="journey-card">
+          <div class="journey-step-num bg-blue-100 text-blue-600">1</div>
+          <h3 class="font-bold text-navy text-lg mb-2">Download & Prepare</h3>
+          <p class="text-sm text-gray-600 leading-relaxed mb-4">When internet is available, citizens load the form and start filling in their details.</p>
+          <div class="bg-gray-50 border border-gray-200 rounded p-3 text-xs font-mono text-gray-500 text-center">
+            🟢 Online<br>> Form Loaded
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="journey-card">
+          <div class="journey-step-num bg-orange-100 text-orange">2</div>
+          <h3 class="font-bold text-navy text-lg mb-2">Offline Persistence</h3>
+          <p class="text-sm text-gray-600 leading-relaxed mb-4">If the internet drops, the application is saved locally to the phone's storage (localStorage).</p>
+          <div class="bg-orange-50 border border-orange-200 rounded p-3 text-xs text-orange-800 font-semibold text-center">
+            🔴 Offline<br>> Saved to Device
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="journey-card">
+          <div class="journey-step-num bg-green-100 text-green-600">3</div>
+          <h3 class="font-bold text-navy text-lg mb-2">Auto-Sync</h3>
+          <p class="text-sm text-gray-600 leading-relaxed mb-4">Once the citizen reaches a location with network, they sync the saved application.</p>
+          <div class="bg-green-50 border border-green-200 rounded p-3 text-xs text-green-800 font-semibold text-center">
+            🟢 Online<br>> Synced Successfully
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 flex gap-4 items-start">
+        <i class="fa-solid fa-lightbulb text-orange text-xl mt-1"></i>
+        <p class="text-sm text-gray-700 leading-relaxed">
+          <strong class="text-navy">The Innovation:</strong> Instead of losing progress when a mountain network drops, the form state is continuously backed up to the browser. Try the <strong>Simulated Offline Mode</strong> button below to see how the UI locks the submission but allows you to keep typing and saving drafts safely.
+        </p>
+      </div>
+    </div>
+
+    <!-- ================= PART 2: LIVE DASHBOARD ================= -->
+    <div class="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 md:p-6 shadow-sm mx-auto max-w-5xl mb-12">
+      
+      <!-- Top Status Bar -->
+      <div class="flex flex-wrap justify-between items-center bg-white p-4 rounded-xl border border-gray-200 mb-6 shadow-sm gap-3">
+        <div class="flex items-center gap-4">
+          <!-- Dynamic Connection Status -->
+          <div id="connection-badge" class="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm bg-green-100 text-green-800 border border-green-300 transition-all duration-300">
+            <span class="w-3 h-3 rounded-full bg-green-500 pulse-green"></span>
+            Online
+          </div>
+          
+          <div class="text-sm text-gray-500 font-medium hidden md:block">
+            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Pending Sync: <span id="sync-count" class="font-bold text-navy">0</span>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button id="btn-simulate-offline" onclick="toggleSimulatedConnection()" class="bg-orange text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-orange-dark transition-colors shadow">
+            <i class="fa-solid fa-wifi-slash mr-1"></i> Simulate Offline
+          </button>
+          <button id="btn-sync" onclick="syncApplications()" class="hidden bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition-colors shadow">
+            <i class="fa-solid fa-rotate mr-1"></i> Sync Saved Applications
+          </button>
+          <button onclick="resetDemo()" class="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors"><i class="fa-solid fa-rotate-left mr-1"></i> Reset Demo</button>
+        </div>
+      </div>
+
+      <!-- Offline Warning Banner -->
+      <div id="offline-warning" class="hidden bg-orange-50 border-l-4 border-orange-500 text-orange-800 p-4 mb-6 rounded-r-lg shadow-sm flex items-start gap-3">
+        <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+        <div>
+          <p class="font-bold">Internet connection unavailable.</p>
+          <p class="text-sm">You can continue preparing your application. Data is saved locally.</p>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left: Services & Form -->
+        <div class="lg:col-span-2 space-y-6">
+          
+          <!-- Service Selection -->
+          <div id="service-selection">
+            <h3 class="text-lg font-bold text-navy mb-3">Available Government Services</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Service Card 1 -->
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:border-orange transition-colors">
+                <div class="flex items-start gap-3 mb-2">
+                  <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-lg"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                  <div>
+                    <h4 class="font-bold text-navy text-sm">Income Certificate</h4>
+                    <p class="text-xs text-gray-500">Proof of annual income</p>
+                  </div>
+                </div>
+                <p class="text-xs text-gray-600 mb-3">Req: Aadhaar, Salary Slip, Address Proof</p>
+                <button onclick="startApplication('Income Certificate')" class="w-full bg-navy text-white text-xs font-bold py-2 rounded hover:bg-blue-900 transition-colors shadow">Start Application</button>
+              </div>
+
+              <!-- Service Card 2 -->
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:border-orange transition-colors">
+                <div class="flex items-start gap-3 mb-2">
+                  <div class="w-10 h-10 rounded-lg bg-green-50 text-green-600 flex items-center justify-center text-lg"><i class="fa-solid fa-house-user"></i></div>
+                  <div>
+                    <h4 class="font-bold text-navy text-sm">Residence Certificate</h4>
+                    <p class="text-xs text-gray-500">Domicile proof for state</p>
+                  </div>
+                </div>
+                <p class="text-xs text-gray-600 mb-3">Req: Aadhaar, Voter ID, Land Document</p>
+                <button onclick="startApplication('Residence Certificate')" class="w-full bg-navy text-white text-xs font-bold py-2 rounded hover:bg-blue-900 transition-colors shadow">Start Application</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Application Form -->
+          <div id="application-form" class="hidden bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+              <h3 class="text-lg font-bold text-navy">Application Form</h3>
+              <button onclick="closeForm()" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <form onsubmit="saveApplication(event)" class="space-y-4">
+              <input type="hidden" id="form-id">
+              <input type="hidden" id="form-service">
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="text-xs font-bold text-gray-600 mb-1 block">Citizen Name *</label>
+                  <input required type="text" id="form-name" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange">
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-gray-600 mb-1 block">Mobile Number *</label>
+                  <input required type="text" id="form-mobile" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange">
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-gray-600 mb-1 block">District *</label>
+                  <input required type="text" id="form-district" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange" value="Tehri Garhwal">
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-gray-600 mb-1 block">Village / Area *</label>
+                  <input required type="text" id="form-village" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange" value="Example Village">
+                </div>
+              </div>
+              <div>
+                <label class="text-xs font-bold text-gray-600 mb-1 block">Required Information / Details *</label>
+                <textarea required id="form-details" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange" placeholder="Enter details..."></textarea>
+              </div>
+              
+              <div class="flex gap-2 pt-2">
+                <button type="submit" class="flex-1 bg-orange text-white font-bold py-2.5 rounded-lg hover:bg-orange-dark transition-colors shadow">Save Application</button>
+                <button type="button" onclick="closeForm()" class="px-6 bg-gray-100 text-gray-600 font-bold rounded-lg hover:bg-gray-200 transition-colors border border-gray-300">Cancel</button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+
+        <!-- Right: Saved Applications Dashboard -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 h-full">
+            <h3 class="text-sm font-bold text-navy mb-3 border-b pb-2">My Saved Applications</h3>
+            
+            <div id="saved-empty" class="text-center py-10">
+              <i class="fa-regular fa-folder-open text-4xl text-gray-300 mb-3"></i>
+              <p class="text-sm text-gray-500">No saved applications yet.</p>
+            </div>
+
+            <div id="saved-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+              <!-- Injected via JS -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex items-start gap-3 max-w-5xl mx-auto w-full mb-12">
+      <i class="fa-solid fa-circle-info text-blue-600 text-xl mt-0.5"></i>
+      <p class="text-sm text-blue-800 leading-relaxed">
+        <strong class="font-bold">Prototype only.</strong> Demonstration prototype using sample data and local browser storage. No real government applications are submitted or synchronized.
+      </p>
+    </div>
+
+  </main>
+
+  <!-- ========== SCRIPT ========== -->
+  <script>
+    (function() {
+      // ---- 1. Build Sidebar ----
+      const icons = ['fa-star', 'fa-bolt', 'fa-shield-halved', 'fa-chart-line', 'fa-gears', 'fa-bell', 'fa-book', 'fa-headset', 'fa-database', 'fa-link'];
+      const sidebarNav = document.getElementById('sidebarNav');
+      if (sidebarNav) {
+        for (let i = 1; i <= 10; i++) {
+          const li = document.createElement('li');
+          const isActive = (i === 7);
+          li.innerHTML = `
+            <a href="feature${i}.html" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:text-navy hover:bg-blue-50 text-sm font-semibold transition-colors group ${isActive ? 'active text-navy bg-blue-50' : ''}">
+              <div class="w-8 h-8 rounded-md ${isActive ? 'bg-orange text-white' : 'bg-blue-50 text-blue-700'} border ${isActive ? 'border-orange' : 'border-blue-100'} flex items-center justify-center group-hover:bg-orange group-hover:text-white group-hover:border-orange transition-colors">
+                <i class="fa-solid ${icons[i-1]} text-xs"></i>
+              </div>
+              Feature ${i}
+              <i class="fa-solid fa-chevron-right ml-auto ${isActive ? 'text-orange' : 'text-gray-300'} text-[10px] group-hover:text-orange transition-colors"></i>
+            </a>`;
+          sidebarNav.appendChild(li);
+        }
+      }
+
+      // ---- 2. State & Connection Logic ----
+      let isSimulatedOffline = false;
+      let apps = JSON.parse(localStorage.getItem('apuni_offline_apps')) || [];
+
+      const DEMO_APP = {
+        id: "APP-001",
+        service: "Income Certificate",
+        name: "Rahul Sharma",
+        mobile: "9876543210",
+        district: "Tehri Garhwal",
+        village: "Example Village",
+        details: "Annual income is ₹1,20,000.",
+        timestamp: new Date().toLocaleString(),
+        status: "Draft"
+      };
+
+      function getConnectionStatus() {
+        // If browser is truly offline, return false. Otherwise check simulation flag.
+        if (!navigator.onLine) return false;
+        return !isSimulatedOffline;
+      }
+
+      // ---- 3. UI Updaters ----
+      function updateConnectionUI() {
+        const isOnline = getConnectionStatus();
+        const badge = document.getElementById('connection-badge');
+        const warning = document.getElementById('offline-warning');
+        const btnSimulate = document.getElementById('btn-simulate-offline');
+        const btnSync = document.getElementById('btn-sync');
+        
+        if (isOnline) {
+          badge.className = 'flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm bg-green-100 text-green-800 border border-green-300 transition-all duration-300';
+          badge.innerHTML = `<span class="w-3 h-3 rounded-full bg-green-500 pulse-green"></span> Online`;
+          warning.classList.add('hidden');
+          
+          btnSimulate.innerHTML = `<i class="fa-solid fa-wifi-slash mr-1"></i> Simulate Offline`;
+          btnSimulate.className = 'bg-orange text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-orange-dark transition-colors shadow';
+          
+          // Show sync button only if there are items waiting
+          const pendingSyncCount = apps.filter(a => a.status === 'Saved Offline' || a.status === 'Ready to Sync' || a.status === 'Draft').length;
+          if (pendingSyncCount > 0) {
+            btnSync.classList.remove('hidden');
+          } else {
+            btnSync.classList.add('hidden');
+          }
+        } else {
+          badge.className = 'flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm bg-red-100 text-red-800 border border-red-300 transition-all duration-300';
+          badge.innerHTML = `<span class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span> Offline`;
+          warning.classList.remove('hidden');
+          
+          btnSimulate.innerHTML = `<i class="fa-solid fa-wifi mr-1"></i> Restore Connection`;
+          btnSimulate.className = 'bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition-colors shadow';
+          
+          btnSync.classList.add('hidden');
+        }
+        
+        // Update Sync Count text
+        const count = apps.filter(a => a.status === 'Saved Offline' || a.status === 'Ready to Sync' || a.status === 'Draft').length;
+        document.getElementById('sync-count').innerText = count;
+
+        renderSavedApps();
+      }
+
+      window.toggleSimulatedConnection = function() {
+        isSimulatedOffline = !isSimulatedOffline;
+        
+        if (!isSimulatedOffline) {
+          // Restoring connection
+          alert("Internet connection restored.");
+          
+          // Update status of Saved Offline apps to Ready to Sync
+          let updated = false;
+          apps.forEach(a => {
+            if (a.status === 'Saved Offline') {
+              a.status = 'Ready to Sync';
+              updated = true;
+            }
+          });
+          if(updated) saveData();
+        } else {
+          alert("Simulating offline mode. Internet connection unavailable.");
+        }
+        
+        updateConnectionUI();
+      };
+
+      // Listen to real browser events
+      window.addEventListener('online', updateConnectionUI);
+      window.addEventListener('offline', updateConnectionUI);
+
+      // ---- 4. Form Logic ----
+      window.startApplication = function(serviceName) {
+        document.getElementById('service-selection').classList.add('hidden');
+        document.getElementById('application-form').classList.remove('hidden');
+        
+        // Reset form
+        document.getElementById('form-id').value = "";
+        document.getElementById('form-service').value = serviceName;
+        document.getElementById('form-name').value = "";
+        document.getElementById('form-mobile').value = "";
+        document.getElementById('form-details').value = "";
+      };
+
+      window.closeForm = function() {
+        document.getElementById('service-selection').classList.remove('hidden');
+        document.getElementById('application-form').classList.add('hidden');
+      };
+
+      window.editApplication = function(id) {
+        const app = apps.find(a => a.id === id);
+        if(!app) return;
+        
+        document.getElementById('service-selection').classList.add('hidden');
+        document.getElementById('application-form').classList.remove('hidden');
+        
+        document.getElementById('form-id').value = app.id;
+        document.getElementById('form-service').value = app.service;
+        document.getElementById('form-name').value = app.name;
+        document.getElementById('form-mobile').value = app.mobile;
+        document.getElementById('form-district').value = app.district;
+        document.getElementById('form-village').value = app.village;
+        document.getElementById('form-details').value = app.details;
+      };
+
+      window.saveApplication = function(e) {
+        e.preventDefault();
+        
+        const isOnline = getConnectionStatus();
+        const id = document.getElementById('form-id').value || "APP-" + Math.floor(100 + Math.random() * 900);
+        
+        const newApp = {
+          id: id,
+          service: document.getElementById('form-service').value,
+          name: document.getElementById('form-name').value,
+          mobile: document.getElementById('form-mobile').value,
+          district: document.getElementById('form-district').value,
+          village: document.getElementById('form-village').value,
+          details: document.getElementById('form-details').value,
+          timestamp: new Date().toLocaleString(),
+          status: isOnline ? "Draft" : "Saved Offline"
+        };
+
+        const existingIdx = apps.findIndex(a => a.id === id);
+        if(existingIdx > -1) {
+          apps[existingIdx] = newApp;
+        } else {
+          apps.push(newApp);
+        }
+
+        saveData();
+        closeForm();
+        
+        alert(`Application ${isOnline ? 'Saved Locally' : 'Saved Offline'}!\nYou can continue editing it later.`);
+      };
+
+      // ---- 5. Dashboard Logic ----
+      function saveData() {
+        localStorage.setItem('apuni_offline_apps', JSON.stringify(apps));
+        updateConnectionUI();
+      }
+
+      function renderSavedApps() {
+        const list = document.getElementById('saved-list');
+        const empty = document.getElementById('saved-empty');
+        
+        if(apps.length === 0) {
+          empty.classList.remove('hidden');
+          list.innerHTML = '';
+          return;
+        }
+        
+        empty.classList.add('hidden');
+        
+        list.innerHTML = apps.map(a => {
+          let badgeClass = 'badge-draft';
+          if(a.status === 'Saved Offline') badgeClass = 'badge-offline';
+          if(a.status === 'Ready to Sync') badgeClass = 'badge-ready';
+          if(a.status === 'Synced (Prototype)') badgeClass = 'badge-synced';
+
+          return `
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs relative group">
+              <div class="flex justify-between items-start mb-1">
+                <span class="font-bold text-navy text-sm">${a.id}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass}">${a.status}</span>
+              </div>
+              <p class="font-semibold text-gray-700">${a.service}</p>
+              <p class="text-gray-500 mb-2">${a.name} • ${a.village}</p>
+              
+              <div class="flex justify-between items-center mt-2 pt-2 border-t border-gray-200">
+                <span class="text-[10px] text-gray-400">${a.timestamp}</span>
+                <div class="flex gap-1">
+                  <button onclick="editApplication('${a.id}')" class="text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                  <button onclick="deleteApplication('${a.id}')" class="text-red-600 hover:text-red-800 bg-red-50 px-2 py-1 rounded" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      window.deleteApplication = function(id) {
+        if(confirm("Delete this draft?")) {
+          apps = apps.filter(a => a.id !== id);
+          saveData();
+        }
+      };
+
+      // ---- 6. Sync Logic ----
+      window.syncApplications = function() {
+        const pending = apps.filter(a => a.status === 'Saved Offline' || a.status === 'Ready to Sync' || a.status === 'Draft');
+        
+        if(pending.length === 0) {
+          alert("No applications to sync.");
+          return;
+        }
+
+        const btn = document.getElementById('btn-sync');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Syncing...`;
+        btn.disabled = true;
+
+        setTimeout(() => {
+          apps.forEach(a => {
+            if(a.status === 'Saved Offline' || a.status === 'Ready to Sync' || a.status === 'Draft') {
+              a.status = 'Synced (Prototype)';
+              a.timestamp = new Date().toLocaleString();
+            }
+          });
+          saveData();
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+          
+          alert("Application prepared successfully. Prototype synchronization completed.");
+        }, 1500);
+      };
+
+      // ---- 7. Reset Demo ----
+      window.resetDemo = function() {
+        if(confirm("Clear all saved applications and reset demo?")) {
+          apps = [DEMO_APP];
+          isSimulatedOffline = false;
+          saveData();
+          closeForm();
+        }
+      };
+
+      // ---- Init ----
+      if(apps.length === 0) {
+        apps = [DEMO_APP];
+        localStorage.setItem('apuni_offline_apps', JSON.stringify(apps));
+      }
+      
+      updateConnectionUI();
+    })();
+  </script>
+</body>
+</html>

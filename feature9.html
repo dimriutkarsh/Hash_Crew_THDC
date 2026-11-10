@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apuni Sarkar Smart Assist – Feature 9</title>
+  <!-- Tailwind + FontAwesome + Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0f2b46',
+            orange: '#d35400',
+            'orange-dark': '#b34700',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    /* ----- Base + Sidebar styles ----- */
+    :root {
+      --navy: #0f2b46;
+      --orange: #d35400;
+      --bg: #f4f6f8;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      color: #1e293b;
+    }
+    body > aside {
+      border-right: 1px solid #cbdcf0;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      width: 16rem;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05);
+      z-index: 30;
+    }
+    body > main {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      background-color: #f4f6f8;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    /* Sidebar nav link style */
+    .nav-link {
+      position: relative;
+      transition: all .25s ease;
+    }
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--orange);
+      transform: scaleY(0);
+      transition: transform .25s ease;
+      border-radius: 0 4px 4px 0;
+    }
+    .nav-link:hover::before,
+    .nav-link.active::before {
+      transform: scaleY(1);
+    }
+
+    /* ---------- UNIQUE EXPLANATION STYLES ---------- */
+    .journey-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    @media (min-width: 768px) {
+      .journey-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .journey-card {
+      background: white;
+      border-radius: 1rem;
+      border: 1px solid #e2e8f0;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    .journey-card:hover {
+      transform: translateY(-4px);
+      border-color: #d35400;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    }
+    .journey-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 4px;
+      background: #e2e8f0;
+      transition: background 0.3s;
+    }
+    .journey-card:hover::before { background: #d35400; }
+    
+    .journey-step-num {
+      width: 2.5rem; height: 2.5rem;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Validation Status Badges */
+    .status-badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .badge-not-uploaded { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+    .badge-uploaded { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+    .badge-checking { background: #fef9c3; color: #ca8a04; border: 1px solid #fef08a; }
+    .badge-valid { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+    .badge-error { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+    .badge-warning { background: #ffedd5; color: #ea580c; border: 1px solid #fed7aa; }
+
+    /* Upload Area */
+    .upload-area {
+      border: 2px dashed #cbd5e1;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.2s;
+      background: #f8fafc;
+      cursor: pointer;
+    }
+    .upload-area:hover {
+      border-color: #d35400;
+      background: #fff7ed;
+    }
+
+    /* Step Indicator */
+    .step-indicator {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin-bottom: 2rem;
+    }
+    .step-indicator::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 0; right: 0; height: 2px;
+      background: #e2e8f0;
+      z-index: 0;
+      transform: translateY(-50%);
+    }
+    .step-item {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      background: #f4f6f8;
+      padding: 0 0.5rem;
+    }
+    .step-circle {
+      width: 2rem; height: 2rem;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 0.8rem;
+      background: #e2e8f0; color: #64748b;
+      border: 2px solid #f4f6f8;
+      transition: all 0.3s;
+    }
+    .step-item.active .step-circle {
+      background: #d35400; color: white; border-color: #ffedd5;
+      box-shadow: 0 0 0 3px #ffedd5;
+    }
+
+    /* Responsive Sidebar */
+    @media (max-width: 768px) {
+      body { overflow: auto; }
+      body > aside { width: 76px; }
+      body > aside h2, body > aside nav a { font-size: 0; }
+      body > aside nav a { justify-content: center; padding-left: 8px; padding-right: 8px; }
+      body > aside nav a > div { margin: 0; }
+      body > aside nav a > i { display: none; }
+      body > aside > div:first-child { justify-content: center; padding: 16px 8px; }
+      body > aside > div:last-child { display: none; }
+      
+      .step-item span { font-size: 0.6rem; text-align: center; }
+      .step-indicator::before { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside>
+    <div class="p-5 border-b border-blue-100 bg-gradient-to-r from-blue-100 via-blue-50 to-white flex items-center gap-3">
+      <div class="bg-orange text-white p-2.5 rounded-lg shadow-md">
+        <i class="fa-solid fa-bars text-sm"></i>
+      </div>
+      <h2 class="text-base font-extrabold text-navy tracking-wider">NAVIGATION</h2>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-4">
+      <ul id="sidebarNav" class="space-y-1 px-3"></ul>
+    </nav>
+    <div class="p-4 border-t border-blue-100 bg-blue-50/70 text-center">
+      <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Prayas 2026 Prototype</p>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main>
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div>
+        <h1 class="text-3xl font-extrabold text-navy tracking-tight">Feature 9: Smart Document Validation</h1>
+        <p class="text-gray-500 text-sm mt-1">Apuni Sarkar Smart Assist – Verify documents before submitting applications</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- Language Selector -->
+        <div class="flex border border-gray-300 rounded-lg overflow-hidden bg-white shadow-sm text-xs font-bold">
+          <button onclick="setLanguage('en')" id="btn-lang-en" class="px-3 py-1.5 bg-navy text-white">English</button>
+          <button onclick="setLanguage('hi')" id="btn-lang-hi" class="px-3 py-1.5 text-gray-600 hover:bg-gray-100 border-l border-gray-300">हिंदी</button>
+        </div>
+        <span class="prototype-badge bg-yellow-100 text-yellow-800 border-yellow-300 px-3 py-1 rounded-full text-xs font-bold shadow-sm"><i class="fa-regular fa-flask mr-1"></i> PROTOTYPE DEMO</span>
+      </div>
+    </div>
+
+    <!-- ================= PART 1: EXPLANATION ================= -->
+    <div class="w-full max-w-5xl mx-auto mb-8 space-y-8">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-extrabold text-navy" data-en="Why Document Validation Matters" data-hi="दस्तावेज़ सत्यापन क्यों महत्वपूर्ण है">Why Document Validation Matters</h2>
+        <p class="text-gray-500 text-sm mt-1" data-en="Helping citizens avoid rejections, delays, and endless back-and-forth." data-hi="नागरिकों को अस्वीकृति, देरी और परेशानी से बचाना।">Helping citizens avoid rejections, delays, and endless back-and-forth.</p>
+      </div>
+
+      <div class="journey-grid">
+        <!-- Card 1 -->
+        <div class="journey-card">
+          <div class="flex items-start gap-4">
+            <div class="journey-step-num bg-red-100 text-red-600"><i class="fa-solid fa-file-circle-xmark"></i></div>
+            <div>
+              <h3 class="font-bold text-navy text-lg mb-2" data-en="The Problem: 30% Rejection Rate" data-hi="समस्या: 30% अस्वीकृति दर">The Problem: 30% Rejection Rate</h3>
+              <p class="text-sm text-gray-600 leading-relaxed" data-en="Thousands of government applications are rejected every year simply because a document was blurry, missing, or in the wrong format. Citizens lose weeks waiting for a fix." data-hi="हर साल हजारों सरकारी आवेदन सिर्फ इसलिए खारिज हो जाते हैं क्योंकि दस्तावेज़ धुंधला, गायब या गलत प्रारूप में था। नागरिकों को इसे ठीक करने में हफ्तों लग जाते हैं।">
+                Thousands of government applications are rejected every year simply because a document was blurry, missing, or in the wrong format. Citizens lose weeks waiting for a fix.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="journey-card">
+          <div class="flex items-start gap-4">
+            <div class="journey-step-num bg-green-100 text-green-600"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <div>
+              <h3 class="font-bold text-navy text-lg mb-2" data-en="The Solution: Pre-Submission AI" data-hi="समाधान: प्री-सबमिशन एआई">The Solution: Pre-Submission AI</h3>
+              <p class="text-sm text-gray-600 leading-relaxed" data-en="Before the citizen clicks 'Submit', the system acts as a virtual clerk. It instantly checks for missing files, invalid formats, blurriness, and mismatched documents." data-hi="नागरिक द्वारा 'सबमिट' करने से पहले, सिस्टम एक वर्चुअल क्लर्क की तरह काम करता है। यह तुरंत गायब फाइलों, अमान्य प्रारूपों, धुंधलेपन और बेमेल दस्तावेजों की जाँच करता है।">
+                Before the citizen clicks 'Submit', the system acts as a virtual clerk. It instantly checks for missing files, invalid formats, blurriness, and mismatched documents.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- The 6 Checks Flowchart -->
+      <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mt-6">
+        <h3 class="text-lg font-extrabold text-navy mb-4 text-center" data-en="The 6 Simulated AI Checks" data-hi="6 सिम्युलेटेड एआई जाँच">The 6 Simulated AI Checks</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+            <i class="fa-solid fa-folder-open text-blue-500 mb-2 text-xl"></i>
+            <h4 class="font-bold text-sm text-navy" data-en="1. Missing Files" data-hi="1. गायब फाइलें">1. Missing Files</h4>
+            <p class="text-xs text-gray-500 mt-1" data-en="Did you upload all 3 required docs?" data-hi="क्या आपने सभी 3 आवश्यक दस्तावेज़ अपलोड किए?">Did you upload all 3 required docs?</p>
+          </div>
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+            <i class="fa-solid fa-file-code text-orange-500 mb-2 text-xl"></i>
+            <h4 class="font-bold text-sm text-navy" data-en="2. Format Check" data-hi="2. प्रारूप जाँच">2. Format Check</h4>
+            <p class="text-xs text-gray-500 mt-1" data-en="Is it PDF, JPG, or PNG?" data-hi="क्या यह PDF, JPG या PNG है?">Is it PDF, JPG, or PNG?</p>
+          </div>
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+            <i class="fa-solid fa-weight-hanging text-purple-500 mb-2 text-xl"></i>
+            <h4 class="font-bold text-sm text-navy" data-en="3. Size Check" data-hi="3. आकार जाँच">3. Size Check</h4>
+            <p class="text-xs text-gray-500 mt-1" data-en="Is the file under 5 MB?" data-hi="क्या फाइल 5 MB से कम है?">Is the file under 5 MB?</p>
+          </div>
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+            <i class="fa-solid fa-eye text-green-500 mb-2 text-xl"></i>
+            <h4 class="font-bold text-sm text-navy" data-en="4. Clarity Check" data-hi="4. स्पष्टता जाँच">4. Clarity Check</h4>
+            <p class="text-xs text-gray-500 mt-1" data-en="Is the image blurry or dark?" data-hi="क्या छवि धुंधली या अंधेरी है?">Is the image blurry or dark?</p>
+          </div>
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+            <i class="fa-solid fa-id-badge text-indigo-500 mb-2 text-xl"></i>
+            <h4 class="font-bold text-sm text-navy" data-en="5. Type Matching" data-hi="5. प्रकार मिलान">5. Type Matching</h4>
+            <p class="text-xs text-gray-500 mt-1" data-en="Did you upload a bill instead of income proof?" data-hi="क्या आपने आय प्रमाण के बजाय बिल अपलोड किया?">Did you upload a bill instead of income proof?</p>
+          </div>
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+            <i class="fa-solid fa-file-circle-check text-teal-500 mb-2 text-xl"></i>
+            <h4 class="font-bold text-sm text-navy" data-en="6. Completeness" data-hi="6. पूर्णता">6. Completeness</h4>
+            <p class="text-xs text-gray-500 mt-1" data-en="Are all pages included?" data-hi="क्या सभी पृष्ठ शामिल हैं?">Are all pages included?</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= PART 2: LIVE DASHBOARD ================= -->
+    <div class="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 md:p-6 shadow-sm mx-auto max-w-5xl mb-12">
+      
+      <!-- Step Indicator -->
+      <div class="step-indicator max-w-2xl mx-auto">
+        <div class="step-item active" id="step-ind-1">
+          <div class="step-circle">1</div>
+          <span class="text-xs font-bold text-navy" data-en="Select Service" data-hi="सेवा चुनें">Select Service</span>
+        </div>
+        <div class="step-item" id="step-ind-2">
+          <div class="step-circle">2</div>
+          <span class="text-xs font-bold text-gray-400" data-en="Upload Docs" data-hi="दस्तावेज़ अपलोड करें">Upload Docs</span>
+        </div>
+        <div class="step-item" id="step-ind-3">
+          <div class="step-circle">3</div>
+          <span class="text-xs font-bold text-gray-400" data-en="Validate" data-hi="सत्यापित करें">Validate</span>
+        </div>
+        <div class="step-item" id="step-ind-4">
+          <div class="step-circle">4</div>
+          <span class="text-xs font-bold text-gray-400" data-en="Review Results" data-hi="परिणाम देखें">Review Results</span>
+        </div>
+      </div>
+
+      <!-- Dashboard Controls -->
+      <div class="flex flex-wrap justify-between items-center bg-white p-4 rounded-xl border border-gray-200 mb-6 shadow-sm gap-3">
+        <div class="flex items-center gap-3">
+          <label class="text-sm font-bold text-navy" data-en="Select Service:" data-hi="सेवा चुनें:">Select Service:</label>
+          <select id="service-select" onchange="changeService()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange bg-white shadow-sm font-medium text-gray-700">
+            <option value="Income Certificate" data-en="Income Certificate" data-hi="आय प्रमाण पत्र">Income Certificate</option>
+            <option value="Residence Certificate" data-en="Residence Certificate" data-hi="निवास प्रमाण पत्र">Residence Certificate</option>
+            <option value="Caste Certificate" data-en="Caste Certificate" data-hi="जाति प्रमाण पत्र">Caste Certificate</option>
+            <option value="Scholarship Application" data-en="Scholarship Application" data-hi="छात्रवृत्ति आवेदन">Scholarship Application</option>
+          </select>
+        </div>
+        
+        <div class="flex gap-2">
+          <button onclick="resetDemo()" class="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors"><i class="fa-solid fa-rotate-left mr-1"></i> Reset Demo</button>
+          <button onclick="openHelp()" class="bg-blue-50 text-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-100 transition-colors"><i class="fa-solid fa-circle-question mr-1"></i> Help</button>
+        </div>
+      </div>
+
+      <!-- Demo Scenarios -->
+      <div class="bg-white p-4 rounded-xl border border-gray-200 mb-6 shadow-sm">
+        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3" data-en="Try Demo Scenarios" data-hi="डेमो परिदृश्य आज़माएं">Try Demo Scenarios</h4>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="loadScenario('all_valid')" class="bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-100 transition-colors"><i class="fa-solid fa-check-circle mr-1"></i> All Valid</button>
+          <button onclick="loadScenario('missing')" class="bg-red-50 text-red-700 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors"><i class="fa-solid fa-file-circle-xmark mr-1"></i> Missing Doc</button>
+          <button onclick="loadScenario('blurry')" class="bg-orange-50 text-orange-700 border border-orange-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-orange-100 transition-colors"><i class="fa-solid fa-eye-slash mr-1"></i> Blurry Doc</button>
+          <button onclick="loadScenario('invalid')" class="bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-purple-100 transition-colors"><i class="fa-solid fa-file-excel mr-1"></i> Wrong Format</button>
+          <button onclick="loadScenario('mismatch')" class="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors"><i class="fa-solid fa-shuffle mr-1"></i> Type Mismatch</button>
+        </div>
+      </div>
+
+      <!-- Document Checklist -->
+      <div id="document-list" class="space-y-4 mb-6">
+        <!-- Injected via JS -->
+      </div>
+
+      <!-- Validation Action -->
+      <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm text-center">
+        <button onclick="validateDocuments()" id="btn-validate" class="bg-navy text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-900 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-lg">
+          <i class="fa-solid fa-microchip mr-2"></i> <span data-en="Validate Documents" data-hi="दस्तावेज़ सत्यापित करें">Validate Documents</span>
+        </button>
+        <p class="text-xs text-gray-500 mt-2" data-en="AI validation is simulated in this prototype." data-hi="इस प्रोटोटाइप में एआई सत्यापन सिम्युलेटेड है।">AI validation is simulated in this prototype.</p>
+      </div>
+
+      <!-- Validation Summary -->
+      <div id="validation-summary" class="hidden mt-6 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <h3 class="text-lg font-bold text-navy mb-4 border-b pb-2" data-en="Validation Summary" data-hi="सत्यापन सारांश">Validation Summary</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="text-center bg-gray-50 p-3 rounded-lg border border-gray-200">
+            <p class="text-xs text-gray-500 font-bold uppercase" data-en="Required" data-hi="आवश्यक">Required</p>
+            <p class="text-2xl font-extrabold text-navy" id="sum-required">3</p>
+          </div>
+          <div class="text-center bg-gray-50 p-3 rounded-lg border border-gray-200">
+            <p class="text-xs text-gray-500 font-bold uppercase" data-en="Uploaded" data-hi="अपलोड किया गया">Uploaded</p>
+            <p class="text-2xl font-extrabold text-blue-600" id="sum-uploaded">0</p>
+          </div>
+          <div class="text-center bg-gray-50 p-3 rounded-lg border border-gray-200">
+            <p class="text-xs text-gray-500 font-bold uppercase" data-en="Valid" data-hi="वैध">Valid</p>
+            <p class="text-2xl font-extrabold text-green-600" id="sum-valid">0</p>
+          </div>
+          <div class="text-center bg-gray-50 p-3 rounded-lg border border-gray-200">
+            <p class="text-xs text-gray-500 font-bold uppercase" data-en="Needs Fix" data-hi="सुधार चाहिए">Needs Fix</p>
+            <p class="text-2xl font-extrabold text-red-600" id="sum-errors">0</p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <div class="flex justify-between text-sm font-bold text-navy mb-1">
+            <span data-en="Readiness" data-hi="तैयारी">Readiness</span>
+            <span id="progress-text">0 / 3</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-3">
+            <div id="progress-bar" class="bg-green-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="text-center">
+          <p id="readiness-msg" class="text-sm font-bold mb-4"></p>
+          <button onclick="openReviewModal()" id="btn-continue" disabled class="bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-colors shadow disabled:opacity-50 disabled:cursor-not-allowed">
+            <span data-en="Continue to Application Review" data-hi="आवेदन समीक्षा के लिए जारी रखें">Continue to Application Review</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex items-start gap-3 max-w-5xl mx-auto w-full mb-12">
+      <i class="fa-solid fa-circle-info text-blue-600 text-xl mt-0.5"></i>
+      <p class="text-sm text-blue-800 leading-relaxed">
+        <strong class="font-bold">Prototype only.</strong> Document validation in this demonstration is simulated. Do not upload real Aadhaar, income, or other sensitive documents. This prototype does not connect to government databases or submit applications.
+      </p>
+    </div>
+
+  </main>
+
+  <!-- Help Modal -->
+  <div id="help-modal" class="fixed inset-0 bg-navy/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold text-navy" data-en="Document Guidelines" data-hi="दस्तावेज़ दिशानिर्देश">Document Guidelines</h3>
+        <button onclick="closeHelp()" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <ul class="text-sm text-gray-600 space-y-2 list-disc list-inside mb-6">
+        <li data-en="Upload a clear photo or PDF of your document." data-hi="अपने दस्तावेज़ की स्पष्ट फोटो या पीडीएफ अपलोड करें।">Upload a clear photo or PDF of your document.</li>
+        <li data-en="Make sure the entire document is visible." data-hi="सुनिश्चित करें कि पूरा दस्तावेज़ दिखाई दे रहा है।">Make sure the entire document is visible.</li>
+        <li data-en="Avoid blurry or dark images." data-hi="धुंधली या अंधेरी छवियों से बचें।">Avoid blurry or dark images.</li>
+        <li data-en="Upload all required pages." data-hi="सभी आवश्यक पृष्ठ अपलोड करें।">Upload all required pages.</li>
+      </ul>
+      <button onclick="closeHelp()" class="w-full bg-navy text-white font-bold py-2 rounded-lg hover:bg-blue-900">Close</button>
+    </div>
+  </div>
+
+  <!-- Review Modal -->
+  <div id="review-modal" class="fixed inset-0 bg-navy/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
+      <div class="text-center mb-4">
+        <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-3">
+          <i class="fa-solid fa-clipboard-check"></i>
+        </div>
+        <h3 class="text-xl font-bold text-navy" data-en="Application Ready for Review" data-hi="समीक्षा के लिए आवेदन तैयार">Application Ready for Review</h3>
+        <p class="text-sm text-gray-500 mt-1" data-en="Your documents have passed the prototype validation checks." data-hi="आपके दस्तावेज़ों ने प्रोटोटाइप सत्यापन जांच पास कर ली है।">Your documents have passed the prototype validation checks.</p>
+      </div>
+
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 text-sm">
+        <div class="flex justify-between mb-1"><span class="text-gray-500">Service:</span> <strong id="rev-service-name" class="text-navy">Income Certificate</strong></div>
+        <div class="flex justify-between mb-1"><span class="text-gray-500">Documents:</span> <strong class="text-green-600">3 Valid</strong></div>
+      </div>
+
+      <label class="flex items-start gap-2 mb-4 cursor-pointer">
+        <input type="checkbox" id="confirm-review-check" class="mt-1 w-4 h-4 text-green-600 rounded">
+        <span class="text-xs text-gray-700" data-en="I confirm that I have reviewed all documents and they are correct." data-hi="मैं पुष्टि करता हूं कि मैंने सभी दस्तावेजों की समीक्षा की है और वे सही हैं।">I confirm that I have reviewed all documents and they are correct.</span>
+      </label>
+
+      <button onclick="completeReview()" id="btn-complete-review" disabled class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition-colors shadow disabled:opacity-50">
+        <span data-en="Prototype Review Complete" data-hi="प्रोटोटाइप समीक्षा पूर्ण">Prototype Review Complete</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== SCRIPT ========== -->
+  <script>
+    (function() {
+      // ---- 1. Build Sidebar ----
+      const icons = ['fa-star', 'fa-bolt', 'fa-shield-halved', 'fa-chart-line', 'fa-gears', 'fa-bell', 'fa-book', 'fa-headset', 'fa-database', 'fa-link'];
+      const sidebarNav = document.getElementById('sidebarNav');
+      if (sidebarNav) {
+        for (let i = 1; i <= 10; i++) {
+          const li = document.createElement('li');
+          const isActive = (i === 9);
+          li.innerHTML = `
+            <a href="feature${i}.html" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:text-navy hover:bg-blue-50 text-sm font-semibold transition-colors group ${isActive ? 'active text-navy bg-blue-50' : ''}">
+              <div class="w-8 h-8 rounded-md ${isActive ? 'bg-orange text-white' : 'bg-blue-50 text-blue-700'} border ${isActive ? 'border-orange' : 'border-blue-100'} flex items-center justify-center group-hover:bg-orange group-hover:text-white group-hover:border-orange transition-colors">
+                <i class="fa-solid ${icons[i-1]} text-xs"></i>
+              </div>
+              Feature ${i}
+              <i class="fa-solid fa-chevron-right ml-auto ${isActive ? 'text-orange' : 'text-gray-300'} text-[10px] group-hover:text-orange transition-colors"></i>
+            </a>`;
+          sidebarNav.appendChild(li);
+        }
+      }
+
+      // ---- 2. Language System ----
+      let currentLang = 'en';
+      window.setLanguage = function(lang) {
+        currentLang = lang;
+        document.getElementById('btn-lang-en').className = lang === 'en' ? 'px-3 py-1.5 bg-navy text-white' : 'px-3 py-1.5 text-gray-600 hover:bg-gray-100 border-l border-gray-300';
+        document.getElementById('btn-lang-hi').className = lang === 'hi' ? 'px-3 py-1.5 bg-navy text-white' : 'px-3 py-1.5 text-gray-600 hover:bg-gray-100 border-l border-gray-300';
+        
+        document.querySelectorAll('[data-en]').forEach(el => {
+          el.innerText = el.getAttribute(`data-${lang}`);
+        });
+        renderDocuments(); // Re-render to translate dynamic content
+      };
+
+      // ---- 3. State & Data ----
+      const SERVICES = {
+        "Income Certificate": [
+          { id: "aadhaar", name_en: "Aadhaar Card", name_hi: "आधार कार्ड", desc_en: "For identity verification", desc_hi: "पहचान सत्यापन के लिए" },
+          { id: "income", name_en: "Income Proof", name_hi: "आय प्रमाण", desc_en: "Supports your income details", desc_hi: "आपके आय विवरण का समर्थन करता है" },
+          { id: "residence", name_en: "Residence Proof", name_hi: "निवास प्रमाण", desc_en: "Shows your current residence", desc_hi: "आपका वर्तमान निवास दिखाता है" }
+        ],
+        "Residence Certificate": [
+          { id: "aadhaar", name_en: "Aadhaar Card", name_hi: "आधार कार्ड", desc_en: "For identity verification", desc_hi: "पहचान सत्यापन के लिए" },
+          { id: "residence", name_en: "Residence Proof", name_hi: "निवास प्रमाण", desc_en: "Shows your current residence", desc_hi: "आपका वर्तमान निवास दिखाता है" }
+        ],
+        "Caste Certificate": [
+          { id: "aadhaar", name_en: "Aadhaar Card", name_hi: "आधार कार्ड", desc_en: "For identity verification", desc_hi: "पहचान सत्यापन के लिए" },
+          { id: "caste", name_en: "Caste Proof", name_hi: "जाति प्रमाण", desc_en: "Proof of caste category", desc_hi: "जाति श्रेणी का प्रमाण" }
+        ],
+        "Scholarship Application": [
+          { id: "aadhaar", name_en: "Aadhaar Card", name_hi: "आधार कार्ड", desc_en: "For identity verification", desc_hi: "पहचान सत्यापन के लिए" },
+          { id: "income", name_en: "Income Proof", name_hi: "आय प्रमाण", desc_en: "Supports your income details", desc_hi: "आपके आय विवरण का समर्थन करता है" },
+          { id: "marksheet", name_en: "Last Marksheet", name_hi: "अंतिम मार्कशीट", desc_en: "Proof of academic performance", desc_hi: "शैक्षणिक प्रदर्शन का प्रमाण" }
+        ]
+      };
+
+      let currentService = "Income Certificate";
+      let docState = {}; // Stores state for each doc: { file: File, status: 'not-uploaded'|'uploaded'|'valid'|'error', message: string }
+
+      // ---- 4. Render Logic ----
+      function renderDocuments() {
+        const container = document.getElementById('document-list');
+        const docs = SERVICES[currentService];
+        
+        if(!docs) return;
+
+        container.innerHTML = docs.map(doc => {
+          const state = docState[doc.id] || { file: null, status: 'not-uploaded', message: '' };
+          
+          let badgeClass = 'badge-not-uploaded';
+          let badgeText = currentLang === 'en' ? 'Not Uploaded' : 'अपलोड नहीं किया गया';
+          let msg = state.message || '';
+          let msgClass = 'text-gray-500';
+
+          if (state.status === 'uploaded') {
+            badgeClass = 'badge-uploaded';
+            badgeText = currentLang === 'en' ? 'Uploaded' : 'अपलोड किया गया';
+          } else if (state.status === 'checking') {
+            badgeClass = 'badge-checking';
+            badgeText = currentLang === 'en' ? 'Checking...' : 'जाँच हो रही है...';
+          } else if (state.status === 'valid') {
+            badgeClass = 'badge-valid';
+            badgeText = currentLang === 'en' ? 'Valid' : 'वैध';
+            msgClass = 'text-green-600 font-medium';
+          } else if (state.status === 'error') {
+            badgeClass = 'badge-error';
+            badgeText = currentLang === 'en' ? 'Needs Fix' : 'सुधार चाहिए';
+            msgClass = 'text-red-600 font-medium';
+          } else if (state.status === 'warning') {
+            badgeClass = 'badge-warning';
+            badgeText = currentLang === 'en' ? 'Needs Review' : 'समीक्षा चाहिए';
+            msgClass = 'text-orange-600 font-medium';
+          }
+
+          return `
+            <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm flex flex-col md:flex-row gap-4 items-start">
+              <div class="w-12 h-12 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 flex-shrink-0">
+                <i class="fa-solid fa-file-invoice text-2xl"></i>
+              </div>
+              <div class="flex-1">
+                <div class="flex justify-between items-start mb-1">
+                  <h4 class="font-bold text-navy text-lg">${currentLang === 'en' ? doc.name_en : doc.name_hi}</h4>
+                  <span class="status-badge ${badgeClass}">${badgeText}</span>
+                </div>
+                <p class="text-sm text-gray-500 mb-3">${currentLang === 'en' ? doc.desc_en : doc.desc_hi}</p>
+                
+                ${state.file ? `
+                  <div class="bg-gray-50 border border-gray-200 rounded p-2 text-xs flex justify-between items-center mb-2">
+                    <span class="font-medium text-gray-700 truncate max-w-xs"><i class="fa-solid fa-paperclip mr-1"></i>${state.file.name}</span>
+                    <span class="text-gray-400">${(state.file.size / 1024 / 1024).toFixed(2)} MB</span>
+                  </div>
+                  ${msg ? `<p class="text-xs ${msgClass} mb-2">${msg}</p>` : ''}
+                  <div class="flex gap-2 mt-2">
+                    <button onclick="triggerFileSelect('${doc.id}')" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded hover:bg-blue-100 transition"><i class="fa-solid fa-arrow-rotate-right mr-1"></i> Replace</button>
+                    <button onclick="removeFile('${doc.id}')" class="text-xs font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded hover:bg-red-100 transition"><i class="fa-solid fa-trash mr-1"></i> Remove</button>
+                  </div>
+                ` : `
+                  <div class="upload-area" onclick="triggerFileSelect('${doc.id}')">
+                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-2"></i>
+                    <p class="text-sm font-bold text-navy">Click to upload</p>
+                    <p class="text-xs text-gray-400 mt-1">PDF, JPG, PNG (Max 5MB)</p>
+                  </div>
+                `}
+                <input type="file" id="file-input-${doc.id}" class="hidden" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileSelect(event, '${doc.id}')">
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        updateStepIndicator();
+      }
+
+      // ---- 5. File Handling ----
+      window.triggerFileSelect = function(docId) {
+        document.getElementById(`file-input-${docId}`).click();
+      };
+
+      window.handleFileSelect = function(event, docId) {
+        const file = event.target.files[0];
+        if(!file) return;
+
+        // Immediate basic validation (size & format)
+        const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+          alert(currentLang === 'en' ? "Unsupported file format. Please upload a PDF, JPG, or PNG." : "असमर्थित फ़ाइल प्रारूप। कृपया PDF, JPG या PNG अपलोड करें।");
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          alert(currentLang === 'en' ? "File size exceeds the 5 MB limit." : "फ़ाइल का आकार 5 MB की सीमा से अधिक है।");
+          return;
+        }
+
+        docState[docId] = {
+          file: file,
+          status: 'uploaded',
+          message: currentLang === 'en' ? 'File uploaded. Ready for validation.' : 'फ़ाइल अपलोड हो गई। सत्यापन के लिए तैयार।'
+        };
+        renderDocuments();
+      };
+
+      window.removeFile = function(docId) {
+        delete docState[docId];
+        renderDocuments();
+      };
+
+      window.changeService = function() {
+        currentService = document.getElementById('service-select').value;
+        docState = {}; // Reset state when changing service
+        document.getElementById('validation-summary').classList.add('hidden');
+        renderDocuments();
+      };
+
+      // ---- 6. Validation Engine ----
+      window.validateDocuments = function() {
+        const docs = SERVICES[currentService];
+        if(!docs) return;
+
+        const btn = document.getElementById('btn-validate');
+        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Validating...`;
+        btn.disabled = true;
+
+        // Reset all to "checking" visually
+        docs.forEach(doc => {
+          if(docState[doc.id] && docState[doc.id].file) {
+            docState[doc.id].status = 'checking';
+            docState[doc.id].message = '';
+          }
+        });
+        renderDocuments();
+
+        setTimeout(() => {
+          // Run simulated logic
+          let validCount = 0;
+          let missingCount = 0;
+          let errorCount = 0;
+
+          docs.forEach(doc => {
+            const state = docState[doc.id];
+            
+            if(!state || !state.file) {
+              // Missing
+              docState[doc.id] = {
+                file: null,
+                status: 'error',
+                message: currentLang === 'en' ? 'Required document missing.' : 'आवश्यक दस्तावेज़ गायब है।'
+              };
+              missingCount++;
+              errorCount++;
+              return;
+            }
+
+            // Simulated AI checks (using file name to fake scenarios)
+            const fileName = state.file.name.toLowerCase();
+            
+            if (fileName.includes('blur') || fileName.includes('dark')) {
+              docState[doc.id].status = 'error';
+              docState[doc.id].message = currentLang === 'en' ? 'Document appears blurry. Please upload a clearer image.' : 'दस्तावेज़ धुंधला लगता है। कृपया स्पष्ट छवि अपलोड करें।';
+              errorCount++;
+            } else if (fileName.includes('incomplete') || fileName.includes('page1')) {
+              docState[doc.id].status = 'warning';
+              docState[doc.id].message = currentLang === 'en' ? 'Some document details may be missing. Please check all pages.' : 'कुछ दस्तावेज़ विवरण गायब हो सकते हैं। कृपया सभी पृष्ठों की जाँच करें।';
+              errorCount++;
+            } else if (fileName.includes('mismatch') || fileName.includes('wrong')) {
+              docState[doc.id].status = 'error';
+              docState[doc.id].message = currentLang === 'en' ? 'Document may not match the selected type.' : 'दस्तावेज़ चयनित प्रकार से मेल नहीं खा सकता है।';
+              errorCount++;
+            } else {
+              // Valid
+              docState[doc.id].status = 'valid';
+              docState[doc.id].message = currentLang === 'en' ? 'Document appears clear and ready.' : 'दस्तावेज़ स्पष्ट और तैयार लगता है।';
+              validCount++;
+            }
+          });
+
+          // Update Summary UI
+          document.getElementById('validation-summary').classList.remove('hidden');
+          document.getElementById('sum-required').innerText = docs.length;
+          document.getElementById('sum-uploaded').innerText = docs.filter(d => docState[d.id] && docState[d.id].file).length;
+          document.getElementById('sum-valid').innerText = validCount;
+          document.getElementById('sum-errors').innerText = errorCount;
+          
+          const progress = Math.round((validCount / docs.length) * 100);
+          document.getElementById('progress-bar').style.width = progress + '%';
+          document.getElementById('progress-text').innerText = `${validCount} / ${docs.length}`;
+
+          const readinessMsg = document.getElementById('readiness-msg');
+          const continueBtn = document.getElementById('btn-continue');
+
+          if (validCount === docs.length) {
+            readinessMsg.innerText = currentLang === 'en' ? "All required documents appear ready for application review." : "सभी आवश्यक दस्तावेज़ आवेदन समीक्षा के लिए तैयार हैं।";
+            readinessMsg.className = "text-sm font-bold text-green-600 mb-4";
+            continueBtn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-check mr-2"></i> Validation Passed`;
+            btn.className = "bg-green-600 text-white font-bold px-8 py-3 rounded-lg shadow-lg text-lg";
+          } else {
+            readinessMsg.innerText = currentLang === 'en' ? "Please fix the highlighted documents to continue." : "जारी रखने के लिए कृपया हाइलाइट किए गए दस्तावेज़ों को ठीक करें।";
+            readinessMsg.className = "text-sm font-bold text-red-600 mb-4";
+            continueBtn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-microchip mr-2"></i> Validate Documents`;
+            btn.className = "bg-navy text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-900 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-lg";
+            btn.disabled = false;
+          }
+
+          renderDocuments();
+        }, 1500);
+      };
+
+      // ---- 7. Demo Scenarios ----
+      window.loadScenario = function(type) {
+        // Clear previous
+        docState = {};
+        const docs = SERVICES[currentService];
+
+        // Helper to create a fake file object
+        const createFakeFile = (name, sizeMB = 1) => ({ name: name, size: sizeMB * 1024 * 1024, type: 'image/jpeg' });
+
+        if (type === 'all_valid') {
+          docs.forEach(d => docState[d.id] = { file: createFakeFile(`${d.id}_valid.jpg`), status: 'uploaded', message: '' });
+        } 
+        else if (type === 'missing') {
+          docs.forEach((d, i) => {
+            if (i < 2) docState[d.id] = { file: createFakeFile(`${d.id}_valid.jpg`), status: 'uploaded', message: '' };
+          });
+        } 
+        else if (type === 'blurry') {
+          docs.forEach((d, i) => {
+            if (i === 1) docState[d.id] = { file: createFakeFile(`blurry_doc.jpg`), status: 'uploaded', message: '' };
+            else docState[d.id] = { file: createFakeFile(`${d.id}_valid.jpg`), status: 'uploaded', message: '' };
+          });
+        } 
+        else if (type === 'invalid') {
+          // We bypass the upload check for demo
+          docs.forEach((d, i) => {
+            if (i === 2) docState[d.id] = { file: createFakeFile(`mismatch_wrong_doc.jpg`), status: 'uploaded', message: '' };
+            else docState[d.id] = { file: createFakeFile(`${d.id}_valid.jpg`), status: 'uploaded', message: '' };
+          });
+        } 
+        else if (type === 'mismatch') {
+          docs.forEach((d, i) => {
+            if (i === 1) docState[d.id] = { file: createFakeFile(`incomplete_page1.jpg`), status: 'uploaded', message: '' };
+            else docState[d.id] = { file: createFakeFile(`${d.id}_valid.jpg`), status: 'uploaded', message: '' }
+          };
+
+        document.getElementById('validation-summary').classList.add('hidden');
+        renderDocuments();
+        
+        // Auto-trigger validation
+        setTimeout(validateDocuments, 300);
+
+      // ---- 8. Step Indicator Logic ----
+      function updateStepIndicator() {
+        const steps = document.querySelectorAll('.step-item');
+        const hasFiles = Object.keys(docState).some(k => docState[k].file);
+        const hasValidated = !document.getElementById('validation-summary').classList.contains('hidden');
+
+        steps.forEach(s => s.classList.remove('active'));
+
+        if (hasValidated) {
+          steps[0].classList.add('active');
+          steps[1].classList.add('active');
+          steps[2].classList.add('active');
+          steps[3].classList.add('active');
+        } else if (hasFiles) {
+          steps[0].classList.add('active');
+          steps[1].classList.add('active');
+        } else {
+          steps[0].classList.add('active');
+        }
+      }
+
+      // ---- 9. Modals & Reset ----
+      window.openHelp = function() { document.getElementById('help-modal').classList.remove('hidden'); document.getElementById('help-modal').classList.add('flex'); };
+      window.closeHelp = function() { document.getElementById('help-modal').classList.add('hidden'); document.getElementById('help-modal').classList.remove('flex'); };
+
+      window.openReviewModal = function() {
+        document.getElementById('rev-service-name').innerText = currentService;
+        document.getElementById('review-modal').classList.remove('hidden'); 
+        document.getElementById('review-modal').classList.add('flex');
+      };
+
+      document.getElementById('confirm-review-check').addEventListener('change', function() {
+        document.getElementById('btn-complete-review').disabled = !this.checked;
+      });
+
+      window.completeReview = function() {
+        document.getElementById('btn-complete-review').innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Processing...`;
+        document.getElementById('btn-complete-review').disabled = true;
+
+        setTimeout(() => {
+          document.getElementById('review-modal').classList.add('hidden');
+          document.getElementById('review-modal').classList.remove('flex');
+          alert(currentLang === 'en' ? "Prototype Review Complete! No real application was submitted." : "प्रोटोटाइप समीक्षा पूर्ण! कोई वास्तविक आवेदन जमा नहीं किया गया।");
+          
+          // Reset
+          resetDemo();
+        }, 1200);
+      };
+
+      window.resetDemo = function() {
+        docState = {};
+        document.getElementById('service-select').value = "Income Certificate";
+        currentService = "Income Certificate";
+        document.getElementById('validation-summary').classList.add('hidden');
+        document.getElementById('confirm-review-check').checked = false;
+        document.getElementById('btn-complete-review').disabled = true;
+        document.getElementById('btn-complete-review').innerHTML = `<span data-en="Prototype Review Complete" data-hi="प्रोटोटाइप समीक्षा पूर्ण">Prototype Review Complete</span>`;
+        
+        // Reset validate button
+        const btn = document.getElementById('btn-validate');
+        btn.innerHTML = `<i class="fa-solid fa-microchip mr-2"></i> <span data-en="Validate Documents" data-hi="दस्तावेज़ सत्यापित करें">Validate Documents</span>`;
+        btn.className = "bg-navy text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-900 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-lg";
+        btn.disabled = false;
+
+        renderDocuments();
+      };
+
+      // Init
+      renderDocuments();
+
+    })();
+  </script>
+</body>
+</html>

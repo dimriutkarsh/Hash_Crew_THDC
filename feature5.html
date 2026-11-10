@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apuni Sarkar Smart Assist – Feature 5</title>
+  <!-- Tailwind + FontAwesome + Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0f2b46',
+            orange: '#d35400',
+            'orange-dark': '#b34700',
+            govgreen: '#0f766e',
+            'govgreen-light': '#ccfbf1'
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    /* ----- Base + Sidebar styles ----- */
+    :root {
+      --navy: #0f2b46;
+      --orange: #d35400;
+      --bg: #f4f6f8;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      color: #1e293b;
+    }
+    body > aside {
+      border-right: 1px solid #cbdcf0;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      width: 16rem;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05);
+      z-index: 30;
+    }
+    body > main {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      background-color: #f4f6f8;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    /* Sidebar nav link style */
+    .nav-link {
+      position: relative;
+      transition: all .25s ease;
+    }
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--orange);
+      transform: scaleY(0);
+      transition: transform .25s ease;
+      border-radius: 0 4px 4px 0;
+    }
+    .nav-link:hover::before,
+    .nav-link.active::before {
+      transform: scaleY(1);
+    }
+
+    /* ---------- FLOWCHART STYLES ---------- */
+    .flow-container {
+      position: relative;
+      padding: 1rem 0;
+    }
+    .flow-line {
+      position: absolute;
+      left: 2rem;
+      top: 3rem;
+      bottom: 3rem;
+      width: 3px;
+      background: #e2e8f0;
+      z-index: 0;
+    }
+    .flow-step {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .flow-step:last-child { margin-bottom: 0; }
+    .flow-dot {
+      width: 4.25rem;
+      height: 4.25rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      border: 4px solid white;
+      box-shadow: 0 0 0 3px #e2e8f0;
+      z-index: 10;
+      transition: all 0.3s ease;
+    }
+    .flow-step:hover .flow-dot {
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 0 0 0 4px #d35400;
+    }
+    .flow-content {
+      background: white;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      flex: 1;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .flow-content::before {
+      content: '';
+      position: absolute;
+      left: -10px;
+      top: 1.75rem;
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-right: 10px solid white;
+      filter: drop-shadow(-2px 0 0 #e2e8f0);
+    }
+    .flow-step:hover .flow-content {
+      transform: translateX(6px);
+      border-color: #d35400;
+      box-shadow: 0 10px 25px -5px rgba(211,84,0,0.15);
+    }
+    .flow-step:hover .flow-content::before {
+      border-right-color: #d35400;
+    }
+
+    @media (max-width: 768px) {
+      body { overflow: auto; }
+      body > aside { width: 76px; }
+      body > aside h2, body > aside nav a { font-size: 0; }
+      body > aside nav a { justify-content: center; padding-left: 8px; padding-right: 8px; }
+      body > aside nav a > div { margin: 0; }
+      body > aside nav a > i { display: none; }
+      body > aside > div:first-child { justify-content: center; padding: 16px 8px; }
+      body > aside > div:last-child { display: none; }
+      
+      .flow-line { left: 1.5rem; }
+      .flow-dot { width: 3rem; height: 3rem; font-size: 1.2rem; border-width: 3px; }
+      .flow-step { gap: 1rem; }
+    }
+
+    main { padding: 1.5rem 2rem; }
+    @media (max-width: 768px) { main { padding: 1rem; } }
+
+    .prototype-badge {
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.25rem 1rem;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+      border: 1px solid #fcd34d;
+      display: inline-block;
+    }
+
+    /* Tabs */
+    .tab-btn {
+      padding: 0.6rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #64748b;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: #0f2b46; background: #f8fafc; }
+    .tab-btn.active { color: #0f2b46; border-bottom-color: #d35400; background: white; }
+
+    /* Custom status badges */
+    .badge-similar { background: #fce7f3; color: #db2777; border: 1px solid #fbcfe8; }
+    .badge-monitoring { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+    .badge-unique { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+    
+    /* Map animation */
+    .map-marker {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .map-marker:hover {
+      transform: scale(1.1);
+      z-index: 20;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside>
+    <div class="p-5 border-b border-blue-100 bg-gradient-to-r from-blue-100 via-blue-50 to-white flex items-center gap-3">
+      <div class="bg-orange text-white p-2.5 rounded-lg shadow-md">
+        <i class="fa-solid fa-bars text-sm"></i>
+      </div>
+      <h2 class="text-base font-extrabold text-navy tracking-wider">NAVIGATION</h2>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-4">
+      <ul id="sidebarNav" class="space-y-1 px-3"></ul>
+    </nav>
+    <div class="p-4 border-t border-blue-100 bg-blue-50/70 text-center">
+      <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Prayas 2026 Prototype</p>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main>
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div>
+        <h1 class="text-3xl font-extrabold text-navy tracking-tight">Feature 5: AI Duplicate Detection</h1>
+        <p class="text-gray-500 text-sm mt-1">Apuni Sarkar Smart Assist – Grouping similar complaints automatically</p>
+      </div>
+      <span class="prototype-badge"><i class="fa-regular fa-flask mr-1"></i> PROTOTYPE DEMO</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-gray-200 w-full max-w-4xl bg-gray-50 rounded-t-2xl overflow-hidden shadow-sm mx-auto">
+      <button class="tab-btn flex-1 text-center active" onclick="switchTab(0)">
+        <i class="fa-solid fa-diagram-project text-orange mr-1"></i> Process Flow
+      </button>
+      <button class="tab-btn flex-1 text-center" onclick="switchTab(1)">
+        <i class="fa-solid fa-desktop text-navy mr-1"></i> Live Interactive Demo
+      </button>
+    </div>
+
+    <!-- Tab Content 1: Process Flowchart -->
+    <div id="tab-content-0" class="w-full flex justify-center bg-white border-x border-b border-gray-200 rounded-b-2xl p-6 shadow-sm mx-auto max-w-4xl">
+      <div class="w-full">
+        <div class="mb-6">
+          <h2 class="text-2xl font-extrabold text-navy">How AI Duplicate Detection Works</h2>
+          <p class="text-gray-500 text-sm mt-1">Identifying multiple reports of the same issue without losing individual complaints.</p>
+        </div>
+
+        <div class="flow-container">
+          <div class="flow-line"></div>
+
+          <!-- Step 1 -->
+          <div class="flow-step">
+            <div class="flow-dot bg-blue-100 text-blue-600"><i class="fa-solid fa-users"></i></div>
+            <div class="flow-content">
+              <span class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1 block">Step 1: Multiple Complaints</span>
+              <h3 class="font-bold text-navy text-lg mb-2">Citizens Report an Issue</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">Different citizens in the same area (e.g., "Example Village") submit complaints. They might describe the same road damage using different words.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="flow-step">
+            <div class="flow-dot bg-purple-100 text-purple-600"><i class="fa-solid fa-microchip"></i></div>
+            <div class="flow-content">
+              <span class="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1 block">Step 2: AI Analysis</span>
+              <h3 class="font-bold text-navy text-lg mb-2">Similarity Matching</h3>
+              <p class="text-gray-600 text-sm leading-relaxed mb-3">The AI compares the complaints. It looks at:</p>
+              <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+                <li>Matching <strong>Category</strong> (e.g., Road Damage)</li>
+                <li>Matching <strong>Location</strong> (e.g., Example Village)</li>
+                <li>Common <strong>Keywords</strong> in descriptions (e.g., "potholes", "school road")</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="flow-step">
+            <div class="flow-dot bg-orange-100 text-orange"><i class="fa-solid fa-object-group"></i></div>
+            <div class="flow-content">
+              <span class="text-xs font-bold text-orange uppercase tracking-wider mb-1 block">Step 3: Group Creation</span>
+              <h3 class="font-bold text-navy text-lg mb-2">Simulated Similarity Score</h3>
+              <p class="text-gray-600 text-sm leading-relaxed mb-3">If the score is above 70%, the system groups them into a single "Issue Group" (e.g., GRP-001). <strong>Important:</strong> Individual complaints are not deleted or merged.</p>
+              <div class="bg-orange-50 text-orange-800 text-sm p-3 rounded-lg font-medium border border-orange-200">
+                <i class="fa-solid fa-link mr-1"></i> 3 complaints linked to one common road issue.
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="flow-step">
+            <div class="flow-dot bg-green-100 text-green-600"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="flow-content">
+              <span class="text-xs font-bold text-green-600 uppercase tracking-wider mb-1 block">Step 4: Official Action</span>
+              <h3 class="font-bold text-navy text-lg mb-2">Monitoring & Efficiency</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">Officials see one grouped issue affecting <strong>3 citizens</strong>, rather than three separate tickets. They can prioritize this area and update all citizens at once.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Content 2: Interactive Demo -->
+    <div id="tab-content-1" class="w-full hidden bg-gray-50 border-x border-b border-gray-200 rounded-b-2xl p-4 md:p-6 shadow-sm mx-auto max-w-5xl">
+      
+      <!-- Demo Controls -->
+      <div class="flex flex-wrap justify-between items-center bg-white p-4 rounded-xl border border-gray-200 mb-6 shadow-sm">
+        <div class="flex flex-wrap gap-2">
+          <button onclick="loadDemo()" class="bg-navy text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-900 transition-colors shadow"><i class="fa-solid fa-download mr-1"></i> Load Demo Complaints</button>
+          <button onclick="analyzeComplaints()" id="analyze-btn" class="bg-orange text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-orange-dark transition-colors shadow"><i class="fa-solid fa-microchip mr-1"></i> Analyze Complaints</button>
+          <button onclick="resetDemo()" class="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors"><i class="fa-solid fa-rotate-left mr-1"></i> Reset Demo</button>
+        </div>
+        <div class="flex gap-2 mt-2 sm:mt-0">
+          <button onclick="switchDemoView('citizen')" id="btn-view-citizen" class="px-4 py-2 rounded-lg text-sm font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50">Citizen Form</button>
+          <button onclick="switchDemoView('official')" id="btn-view-official" class="px-4 py-2 rounded-lg text-sm font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50">Official Dashboard</button>
+        </div>
+      </div>
+
+      <!-- ================= CITIZEN VIEW ================= -->
+      <div id="view-citizen" class="space-y-6">
+        <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm max-w-2xl mx-auto">
+          <h3 class="text-xl font-bold text-navy mb-4">Submit a New Complaint</h3>
+          <form onsubmit="submitComplaint(event)" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div><label class="text-xs font-bold text-gray-600 mb-1 block">Full Name</label><input required type="text" id="c-name" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange"></div>
+              <div>
+                <label class="text-xs font-bold text-gray-600 mb-1 block">Category</label>
+                <select id="c-category" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange">
+                  <option>Road Damage</option><option>Water Supply</option><option>Electricity</option><option>Drainage</option><option>Public Infrastructure</option><option>Other</option>
+                </select>
+              </div>
+              <div><label class="text-xs font-bold text-gray-600 mb-1 block">District</label><input required type="text" id="c-district" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange" value="Tehri Garhwal"></div>
+              <div><label class="text-xs font-bold text-gray-600 mb-1 block">Village / Area</label><input required type="text" id="c-village" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange" value="Example Village"></div>
+            </div>
+            <div><label class="text-xs font-bold text-gray-600 mb-1 block">Location Description</label><input required type="text" id="c-loc" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange" placeholder="e.g. Near Government School"></div>
+            <div><label class="text-xs font-bold text-gray-600 mb-1 block">Complaint Description</label><textarea required id="c-desc" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange" placeholder="Describe the issue..."></textarea></div>
+            <button type="submit" class="w-full bg-orange text-white font-bold py-3 rounded-lg hover:bg-orange-dark transition-colors shadow">Submit Complaint</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- ================= OFFICIAL VIEW ================= -->
+      <div id="view-official" class="space-y-6 hidden">
+        
+        <!-- Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm text-center">
+            <p class="text-xs text-gray-500 font-bold uppercase">Total Complaints</p>
+            <p id="stat-total" class="text-2xl font-extrabold text-navy">0</p>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm text-center">
+            <p class="text-xs text-gray-500 font-bold uppercase">Similar Groups</p>
+            <p id="stat-groups" class="text-2xl font-extrabold text-orange">0</p>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm text-center">
+            <p class="text-xs text-gray-500 font-bold uppercase">Unique Locations</p>
+            <p id="stat-locations" class="text-2xl font-extrabold text-blue-600">0</p>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm text-center">
+            <p class="text-xs text-gray-500 font-bold uppercase">Under Monitoring</p>
+            <p id="stat-monitoring" class="text-2xl font-extrabold text-green-600">0</p>
+          </div>
+        </div>
+
+        <!-- Simulated Map Panel -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+          <h3 class="text-sm font-bold text-navy mb-3"><i class="fa-solid fa-map-location-dot text-orange mr-1"></i> Location Hotspots (Simulated)</h3>
+          <div class="bg-blue-50 h-40 rounded-lg relative overflow-hidden flex items-center justify-center border border-blue-100">
+            <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#0284c7 1px, transparent 1px); background-size: 20px 20px;"></div>
+            <!-- Marker 1 -->
+            <div class="map-marker bg-white px-3 py-2 rounded-lg shadow-md border-l-4 border-orange absolute top-10 left-1/4">
+              <p class="text-xs font-bold text-navy">Example Village</p>
+              <p class="text-[10px] text-orange font-bold">3 Complaints (Grouped)</p>
+            </div>
+            <!-- Marker 2 -->
+            <div class="map-marker bg-white px-3 py-2 rounded-lg shadow-md border-l-4 border-gray-400 absolute bottom-8 right-1/4">
+              <p class="text-xs font-bold text-navy">Other Area</p>
+              <p class="text-[10px] text-gray-500 font-bold">1 Complaint</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Groups / Complaints List -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div class="p-4 border-b border-gray-200 bg-gray-50 flex flex-wrap justify-between items-center gap-2">
+            <h3 class="text-lg font-bold text-navy">Complaint Groups</h3>
+            <input type="text" id="search-groups" onkeyup="renderOfficialDashboard()" placeholder="Search ID or location..." class="border rounded-lg px-3 py-1.5 text-sm outline-none focus:border-orange w-64">
+          </div>
+          
+          <div id="official-empty-state" class="text-center py-10">
+            <p class="text-gray-500">No complaints found. Load demo or submit a complaint.</p>
+          </div>
+
+          <div id="groups-container" class="divide-y divide-gray-100"></div>
+        </div>
+
+      </div>
+
+      <!-- Group Details Modal -->
+      <div id="group-modal" class="fixed inset-0 bg-navy/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+          <div class="bg-navy text-white p-5 flex justify-between items-center sticky top-0 z-10">
+            <div>
+              <h3 id="modal-title" class="text-xl font-extrabold">Issue Group: GRP-001</h3>
+              <p id="modal-subtitle" class="text-blue-200 text-sm">Road Damage - Example Village</p>
+            </div>
+            <button onclick="closeModal()" class="text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors"><i class="fa-solid fa-xmark text-lg"></i></button>
+          </div>
+          
+          <div class="p-6 space-y-6">
+            <!-- AI Analysis Banner -->
+            <div class="bg-purple-50 border border-purple-200 rounded-xl p-4 flex items-start gap-3">
+              <i class="fa-solid fa-robot text-purple-600 text-xl mt-0.5"></i>
+              <div>
+                <p class="text-sm font-bold text-purple-900">Simulated AI Analysis Complete</p>
+                <p class="text-xs text-purple-700 mt-1">3 individual complaints linked due to high text similarity (Score: 85%) in the same location and category. Individual records remain separate.</p>
+              </div>
+            </div>
+
+            <!-- Official Remarks -->
+            <div>
+              <h4 class="font-bold text-navy mb-2 text-sm">Official Remarks</h4>
+              <div class="flex gap-2">
+                <input type="text" id="off-remark-input" class="flex-1 border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange" placeholder="Add a monitoring note...">
+                <button onclick="saveRemark()" class="bg-navy text-white px-4 py-2 rounded-lg font-bold text-sm shadow hover:bg-blue-900">Save</button>
+              </div>
+              <p id="off-remark-display" class="text-sm text-gray-600 italic mt-2 hidden bg-gray-50 p-2 rounded border border-gray-200"></p>
+            </div>
+
+            <!-- Individual Complaints -->
+            <div>
+              <h4 class="font-bold text-navy mb-3 text-sm">Individual Complaints (Not Merged)</h4>
+              <div id="modal-complaints-list" class="space-y-3">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-2 rounded-b-2xl">
+            <button onclick="markMonitoring()" class="bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-green-700 transition-colors">Mark Group Under Monitoring</button>
+            <button onclick="closeModal()" class="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg font-bold shadow hover:bg-gray-100 transition-colors">Close</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex items-start gap-3 max-w-5xl mx-auto w-full mt-6 mb-12">
+      <i class="fa-solid fa-circle-info text-blue-600 text-xl mt-0.5"></i>
+      <p class="text-sm text-blue-800 leading-relaxed">
+        <strong class="font-bold">Prototype only.</strong> Demonstration prototype using sample data and simulated AI matching. Individual complaints remain separate. No real government complaints are submitted, merged, deleted, or closed.
+      </p>
+    </div>
+
+  </main>
+
+  <!-- ========== SCRIPT ========== -->
+  <script>
+    (function() {
+      // ---- 1. Build Sidebar ----
+      const icons = ['fa-star', 'fa-bolt', 'fa-shield-halved', 'fa-chart-line', 'fa-gears', 'fa-bell', 'fa-book', 'fa-headset', 'fa-database', 'fa-link'];
+      const sidebarNav = document.getElementById('sidebarNav');
+      if (sidebarNav) {
+        for (let i = 1; i <= 10; i++) {
+          const li = document.createElement('li');
+          const isActive = (i === 5); // Feature 5
+          li.innerHTML = `
+            <a href="feature${i}.html" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:text-navy hover:bg-blue-50 text-sm font-semibold transition-colors group ${isActive ? 'active text-navy bg-blue-50' : ''}">
+              <div class="w-8 h-8 rounded-md ${isActive ? 'bg-orange text-white' : 'bg-blue-50 text-blue-700'} border ${isActive ? 'border-orange' : 'border-blue-100'} flex items-center justify-center group-hover:bg-orange group-hover:text-white group-hover:border-orange transition-colors">
+                <i class="fa-solid ${icons[i-1]} text-xs"></i>
+              </div>
+              Feature ${i}
+              <i class="fa-solid fa-chevron-right ml-auto ${isActive ? 'text-orange' : 'text-gray-300'} text-[10px] group-hover:text-orange transition-colors"></i>
+            </a>`;
+          sidebarNav.appendChild(li);
+        }
+      }
+
+      // ---- 2. Tab Switching Logic ----
+      window.switchTab = function(index) {
+        document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === index));
+        document.getElementById('tab-content-0').classList.toggle('hidden', index !== 0);
+        document.getElementById('tab-content-1').classList.toggle('hidden', index !== 1);
+      };
+
+      // ---- 3. State Management ----
+      let complaints = JSON.parse(localStorage.getItem('apuni_complaints_feat5')) || [];
+      let groups = JSON.parse(localStorage.getItem('apuni_groups_feat5')) || [];
+      let activeGroupId = null;
+
+      function saveState() {
+        localStorage.setItem('apuni_complaints_feat5', JSON.stringify(complaints));
+        localStorage.setItem('apuni_groups_feat5', JSON.stringify(groups));
+        renderOfficialDashboard();
+      }
+
+      // ---- 4. Demo Functions ----
+      window.loadDemo = function() {
+        complaints = [
+          { id: "UK-2026-1042", citizenName: "Rahul Sharma", category: "Road Damage", district: "Tehri Garhwal", village: "Example Village", locDesc: "Near Government School", description: "The road near the government school has large potholes and needs repair.", date: new Date().toLocaleDateString(), status: "Registered" },
+          { id: "UK-2026-1043", citizenName: "Priya Singh", category: "Road Damage", district: "Tehri Garhwal", village: "Example Village", locDesc: "School Road", description: "The village school road is damaged and contains many potholes.", date: new Date().toLocaleDateString(), status: "Registered" },
+          { id: "UK-2026-1044", citizenName: "Aman Rawat", category: "Road Damage", district: "Tehri Garhwal", village: "Example Village", locDesc: "Near Govt School", description: "Road repair is required near the government school because the road surface is broken.", date: new Date().toLocaleDateString(), status: "Registered" },
+          { id: "UK-2026-1045", citizenName: "Neha Gupta", category: "Water Supply", district: "Dehradun", village: "City Center", locDesc: "Main Market", description: "No water supply for 3 days in the main market area.", date: new Date().toLocaleDateString(), status: "Registered" }
+        ];
+        groups = [];
+        saveState();
+        switchDemoView('official');
+        alert("4 demo complaints loaded. Click 'Analyze Complaints' to run AI matching.");
+      };
+
+      window.resetDemo = function() {
+        if(confirm("Clear all data and reset demo?")) {
+          complaints = [];
+          groups = [];
+          saveState();
+          switchDemoView('citizen');
+        }
+      };
+
+      window.submitComplaint = function(e) {
+        e.preventDefault();
+        const id = "UK-2026-" + Math.floor(1000 + Math.random() * 9000);
+        complaints.push({
+          id: id,
+          citizenName: document.getElementById('c-name').value,
+          category: document.getElementById('c-category').value,
+          district: document.getElementById('c-district').value,
+          village: document.getElementById('c-village').value,
+          locDesc: document.getElementById('c-loc').value,
+          description: document.getElementById('c-desc').value,
+          date: new Date().toLocaleDateString(),
+          status: "Registered"
+        });
+        saveState();
+        alert("Complaint " + id + " submitted successfully!");
+        document.getElementById('c-name').value = '';
+        document.getElementById('c-desc').value = '';
+        switchDemoView('official');
+      };
+
+      // ---- 5. AI Analysis Simulation ----
+      window.analyzeComplaints = function() {
+        if(complaints.length < 2) return alert("Need at least 2 complaints to analyze.");
+        
+        const btn = document.getElementById('analyze-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Analyzing...';
+        btn.disabled = true;
+
+        setTimeout(() => {
+          // Simple grouping logic for prototype:
+          // Group by Category + Village
+          const newGroups = [];
+          const processed = new Set();
+
+          complaints.forEach((c1, i) => {
+            if(processed.has(c1.id)) return;
+
+            const similar = [c1];
+            processed.add(c1.id);
+
+            for(let j = i+1; j < complaints.length; j++) {
+              const c2 = complaints[j];
+              if(processed.has(c2.id)) continue;
+
+              // Match if same category AND same village
+              if(c1.category === c2.category && c1.village.toLowerCase() === c2.village.toLowerCase()) {
+                similar.push(c2);
+                processed.add(c2.id);
+              }
+            }
+
+            if(similar.length > 1) {
+              // Create group
+              newGroups.push({
+                id: "GRP-" + String(newGroups.length + 1).padStart(3, '0'),
+                category: c1.category,
+                location: c1.village + ", " + c1.district,
+                issueName: c1.category + " in " + c1.village,
+                complaints: similar.map(c => c.id),
+                status: "Under Monitoring",
+                officialRemarks: ""
+              });
+            }
+          });
+
+          groups = newGroups;
+          saveState();
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+          
+          if(groups.length > 0) {
+            alert(`Analysis complete! Found ${groups.length} issue group(s) with similar complaints.`);
+          } else {
+            alert("Analysis complete. No similar complaints found.");
+          }
+        }, 1500);
+      };
+
+      // ---- 6. Official Dashboard Rendering ----
+      window.switchDemoView = function(view) {
+        document.getElementById('view-citizen').classList.toggle('hidden', view !== 'citizen');
+        document.getElementById('view-official').classList.toggle('hidden', view !== 'official');
+        
+        const btnC = document.getElementById('btn-view-citizen');
+        const btnO = document.getElementById('btn-view-official');
+        if (view === 'citizen') {
+          btnC.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-orange text-white shadow';
+          btnO.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50';
+        } else {
+          btnO.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-orange text-white shadow';
+          btnC.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50';
+        }
+        renderOfficialDashboard();
+      };
+
+      function renderOfficialDashboard() {
+        // Stats
+        document.getElementById('stat-total').innerText = complaints.length;
+        document.getElementById('stat-groups').innerText = groups.length;
+        
+        const uniqueLocs = new Set(complaints.map(c => c.village)).size;
+        document.getElementById('stat-locations').innerText = uniqueLocs;
+        
+        const monitoring = groups.filter(g => g.status === 'Under Monitoring').length;
+        document.getElementById('stat-monitoring').innerText = monitoring;
+
+        // Groups List
+        const container = document.getElementById('groups-container');
+        const emptyState = document.getElementById('official-empty-state');
+        const search = document.getElementById('search-groups').value.toLowerCase();
+
+        let displayGroups = groups;
+        
+        // If no groups yet, show all individual complaints as "Unique" cards
+        if (groups.length === 0) {
+          if (complaints.length === 0) {
+            emptyState.classList.remove('hidden');
+            container.innerHTML = '';
+            return;
+          }
+          emptyState.classList.add('hidden');
+          
+          // Show un-grouped complaints
+          let filteredComplaints = complaints.filter(c => 
+            c.id.toLowerCase().includes(search) || 
+            c.village.toLowerCase().includes(search) || 
+            c.category.toLowerCase().includes(search)
+          );
+          
+          container.innerHTML = filteredComplaints.map(c => `
+            <div class="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:bg-gray-50 transition-colors">
+              <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center flex-shrink-0"><i class="fa-regular fa-file-lines"></i></div>
+                <div>
+                  <p class="font-bold text-navy text-sm">${c.id} <span class="badge-unique text-[10px] px-2 py-0.5 rounded ml-2">Unique</span></p>
+                  <p class="text-xs text-gray-500">${c.category} • ${c.village}</p>
+                  <p class="text-xs text-gray-400 mt-1 truncate max-w-md">"${c.description}"</p>
+                </div>
+              </div>
+              <button onclick="openGroupById('${c.id}')" class="text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1.5 rounded border border-blue-100">View Details</button>
+            </div>
+          `).join('');
+          return;
+        }
+
+        // If groups exist, show groups
+        emptyState.classList.add('hidden');
+        let filteredGroups = displayGroups.filter(g => 
+          g.id.toLowerCase().includes(search) || 
+          g.location.toLowerCase().includes(search) || 
+          g.category.toLowerCase().includes(search)
+        );
+
+        if(filteredGroups.length === 0) {
+          container.innerHTML = '<div class="p-8 text-center text-gray-500">No groups match your search.</div>';
+          return;
+        }
+
+        container.innerHTML = filteredGroups.map(g => `
+          <div class="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:bg-gray-50 transition-colors">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-full bg-orange-100 text-orange flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-object-group"></i></div>
+              <div>
+                <p class="font-bold text-navy text-sm">${g.id} <span class="badge-monitoring text-[10px] px-2 py-0.5 rounded ml-2">${g.status}</span></p>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">${g.issueName}</p>
+                <p class="text-xs text-gray-400 mt-1">${g.complaints.length} related complaints • ${g.location}</p>
+              </div>
+            </div>
+            <button onclick="openGroupById('${g.id}')" class="text-xs font-bold text-white bg-navy hover:bg-blue-900 px-4 py-2 rounded-lg shadow transition-colors">View Group</button>
+          </div>
+        `).join('');
+      }
+
+      // ---- 7. Group Details Modal ----
+      window.openGroupById = function(id) {
+        activeGroupId = id;
+        const group = groups.find(g => g.id === id);
+        
+        if(!group) {
+          // It's an individual complaint, show a mini modal or alert
+          const comp = complaints.find(c => c.id === id);
+          if(comp) {
+            alert(`Complaint Details:\nID: ${comp.id}\nCitizen: ${comp.citizenName}\nCategory: ${comp.category}\nDescription: ${comp.description}`);
+          }
+          return;
+        }
+
+        document.getElementById('modal-title').innerText = `Issue Group: ${group.id}`;
+        document.getElementById('modal-subtitle').innerText = `${group.category} - ${group.location}`;
+        
+        // Remarks
+        const remInput = document.getElementById('off-remark-input');
+        const remDisplay = document.getElementById('off-remark-display');
+        if(group.officialRemarks) {
+          remInput.value = group.officialRemarks;
+          remDisplay.innerText = group.officialRemarks;
+          remDisplay.classList.remove('hidden');
+        } else {
+          remInput.value = '';
+          remDisplay.classList.add('hidden');
+        }
+
+        // Complaints List
+        const list = document.getElementById('modal-complaints-list');
+        const relatedComps = complaints.filter(c => group.complaints.includes(c.id));
+        
+        list.innerHTML = relatedComps.map(c => `
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <div class="flex justify-between items-start mb-1">
+              <p class="font-bold text-navy text-sm">${c.id}</p>
+              <span class="text-[10px] text-gray-500 font-bold bg-white px-2 py-0.5 rounded border">${c.status}</span>
+            </div>
+            <p class="text-xs text-gray-700 font-semibold mb-1">${c.citizenName} <span class="text-gray-400 font-normal">| ${c.date}</span></p>
+            <p class="text-xs text-gray-600 italic">"${c.description}"</p>
+            <p class="text-[10px] text-gray-500 mt-2"><i class="fa-solid fa-location-dot mr-1"></i>${c.village} (${c.locDesc})</p>
+          </div>
+        `).join('');
+
+        document.getElementById('group-modal').classList.remove('hidden');
+        document.getElementById('group-modal').classList.add('flex');
+      };
+
+      window.closeModal = function() {
+        document.getElementById('group-modal').classList.add('hidden');
+        document.getElementById('group-modal').classList.remove('flex');
+      };
+
+      window.saveRemark = function() {
+        const group = groups.find(g => g.id === activeGroupId);
+        if(group) {
+          const val = document.getElementById('off-remark-input').value;
+          group.officialRemarks = val;
+          saveState();
+          document.getElementById('off-remark-display').innerText = val;
+          document.getElementById('off-remark-display').classList.remove('hidden');
+          alert("Remark saved.");
+        }
+      };
+
+      window.markMonitoring = function() {
+        const group = groups.find(g => g.id === activeGroupId);
+        if(group) {
+          group.status = "Under Monitoring";
+          saveState();
+          alert("Group marked as Under Monitoring.");
+          closeModal();
+        }
+      };
+
+      // Initial render
+      renderOfficialDashboard();
+    })();
+  </script>
+</body>
+</html>

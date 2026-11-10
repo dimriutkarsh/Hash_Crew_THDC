@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apuni Sarkar Smart Assist – Feature 3</title>
+  <!-- Tailwind + FontAwesome + Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0f2b46',
+            orange: '#d35400',
+            'orange-dark': '#b34700',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    /* ----- Base + Sidebar styles ----- */
+    :root {
+      --navy: #0f2b46;
+      --orange: #d35400;
+      --bg: #f4f6f8;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      color: #1e293b;
+    }
+    body > aside {
+      border-right: 1px solid #cbdcf0;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      width: 16rem;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05);
+      z-index: 30;
+    }
+    body > main {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      background-color: #f4f6f8;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    /* Sidebar nav link style */
+    .nav-link {
+      position: relative;
+      transition: all .25s ease;
+    }
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--orange);
+      transform: scaleY(0);
+      transition: transform .25s ease;
+      border-radius: 0 4px 4px 0;
+    }
+    .nav-link:hover::before,
+    .nav-link.active::before {
+      transform: scaleY(1);
+    }
+
+    /* ---------- LAPTOP MOCKUP ---------- */
+    .device-mockup {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      perspective: 1200px;
+    }
+    .laptop-screen {
+      width: 100%;
+      background: #0b141e;
+      border-radius: 20px 20px 0 0;
+      padding: 18px 18px 24px 18px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), inset 0 0 0 2px #1e293b;
+      position: relative;
+      z-index: 2;
+    }
+    .laptop-screen::before {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      background: #334155;
+      border-radius: 50%;
+    }
+    .video-container {
+      width: 100%;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+    }
+    .video-container video {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      outline: none;
+    }
+    .laptop-base {
+      width: 110%;
+      height: 22px;
+      background: linear-gradient(to bottom, #cbd5e1, #94a3b8);
+      border-radius: 0 0 20px 20px;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.5);
+      display: flex;
+      justify-content: center;
+    }
+    .laptop-base::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 6px;
+      background: #64748b;
+      border-radius: 0 0 10px 10px;
+    }
+
+    /* ---------- FLOWCHART STYLES ---------- */
+    .flow-container {
+      position: relative;
+      padding: 2rem 0;
+    }
+    /* The vertical line connecting the steps */
+    .flow-line {
+      position: absolute;
+      left: 2rem;
+      top: 3rem;
+      bottom: 3rem;
+      width: 3px;
+      background: #e2e8f0;
+      z-index: 0;
+    }
+    .flow-step {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    .flow-step:last-child {
+      margin-bottom: 0;
+    }
+    /* The dot on the line */
+    .flow-dot {
+      width: 4.25rem;
+      height: 4.25rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      border: 4px solid white;
+      box-shadow: 0 0 0 3px #e2e8f0;
+      z-index: 10;
+      transition: all 0.3s ease;
+    }
+    .flow-step:hover .flow-dot {
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 0 0 0 4px #d35400;
+    }
+    .flow-content {
+      background: white;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      flex: 1;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    /* Arrow pointing to content */
+    .flow-content::before {
+      content: '';
+      position: absolute;
+      left: -10px;
+      top: 1.75rem;
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-right: 10px solid white;
+      filter: drop-shadow(-2px 0 0 #e2e8f0);
+    }
+    .flow-step:hover .flow-content {
+      transform: translateX(6px);
+      border-color: #d35400;
+      box-shadow: 0 10px 25px -5px rgba(211,84,0,0.15);
+    }
+    .flow-step:hover .flow-content::before {
+      border-right-color: #d35400;
+    }
+
+    /* Responsive overrides */
+    @media (max-width: 768px) {
+      body { overflow: auto; }
+      body > aside { width: 76px; }
+      body > aside h2,
+      body > aside nav a { font-size: 0; }
+      body > aside nav a { justify-content: center; padding-left: 8px; padding-right: 8px; }
+      body > aside nav a > div { margin: 0; }
+      body > aside nav a > i { display: none; }
+      body > aside > div:first-child { justify-content: center; padding: 16px 8px; }
+      body > aside > div:last-child { display: none; }
+      .laptop-base { width: 105%; }
+      
+      .flow-line { left: 1.5rem; }
+      .flow-dot { width: 3rem; height: 3rem; font-size: 1.2rem; border-width: 3px; }
+      .flow-step { gap: 1rem; }
+    }
+
+    main {
+      padding: 1.5rem 2rem;
+    }
+    @media (max-width: 768px) {
+      main { padding: 1rem; }
+    }
+
+    .prototype-badge {
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.25rem 1rem;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+      border: 1px solid #fcd34d;
+      display: inline-block;
+    }
+
+    /* Tab styles */
+    .tab-btn {
+      padding: 0.6rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #64748b;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: #0f2b46;
+      background: #f8fafc;
+    }
+    .tab-btn.active {
+      color: #0f2b46;
+      border-bottom-color: #d35400;
+      background: white;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside>
+    <div class="p-5 border-b border-blue-100 bg-gradient-to-r from-blue-100 via-blue-50 to-white flex items-center gap-3">
+      <div class="bg-orange text-white p-2.5 rounded-lg shadow-md">
+        <i class="fa-solid fa-bars text-sm"></i>
+      </div>
+      <h2 class="text-base font-extrabold text-navy tracking-wider">NAVIGATION</h2>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto py-4">
+      <ul id="sidebarNav" class="space-y-1 px-3">
+        <!-- filled by JS -->
+      </ul>
+    </nav>
+
+    <div class="p-4 border-t border-blue-100 bg-blue-50/70 text-center">
+      <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Prayas 2026 Prototype</p>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main>
+
+    <!-- prototype notice header -->
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="text-3xl font-extrabold text-navy tracking-tight">Feature 3: WhatsApp-Based Chatbot</h1>
+        <p class="text-gray-500 text-sm mt-1">Apuni Sarkar Smart Assist – Government services via WhatsApp</p>
+      </div>
+      <span class="prototype-badge"><i class="fa-regular fa-flask mr-1"></i> PROTOTYPE DEMO</span>
+    </div>
+
+    <!-- Tabbed Laptop Frame / Video Player -->
+    <div class="flex flex-col items-center w-full mt-4">
+      
+      <!-- Tabs -->
+      <div class="flex border-b border-gray-200 w-full max-w-2xl bg-gray-50 rounded-t-2xl overflow-hidden shadow-sm">
+        <button class="tab-btn flex-1 text-center active" onclick="switchTab(0)">
+          <i class="fa-brands fa-whatsapp text-green-500 mr-1"></i> Live Demo (Video)
+        </button>
+        <button class="tab-btn flex-1 text-center" onclick="switchTab(1)">
+          <i class="fa-solid fa-diagram-project text-orange mr-1"></i> Process Flow
+        </button>
+      </div>
+
+      <!-- Tab Content 1: Laptop Video Frame -->
+      <div id="tab-content-0" class="w-full flex justify-center bg-white border-x border-b border-gray-200 rounded-b-2xl p-6 shadow-sm">
+        
+        <div class="device-mockup">
+          <!-- Screen -->
+          <div class="laptop-screen">
+            <div class="video-container">
+              <!-- Added autoplay and muted attributes -->
+              <video autoplay muted controls playsinline poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'%3E%3Crect width='800' height='450' fill='%230b141e'/%3E%3Ctext x='400' y='210' font-family='Inter' font-size='18' fill='%2394a3b8' text-anchor='middle'%3ELoading video demo...%3C/text%3E%3Ctext x='400' y='240' font-family='Inter' font-size='14' fill='%23475569' text-anchor='middle'%3E(Please ensure feature3.mp4 exists)%3C/text%3E%3C/svg%3E">
+                <!-- The video file "feature3.mp4" should be placed in the same folder -->
+                <source src="feature3.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
+          <!-- Laptop Base -->
+          <div class="laptop-base"></div>
+        </div>
+        
+      </div>
+
+      <!-- Tab Content 2: Process Flowchart -->
+      <div id="tab-content-1" class="w-full hidden bg-gray-50 border-x border-b border-gray-200 rounded-b-2xl p-6 shadow-sm">
+        
+        <div class="max-w-3xl mx-auto">
+          <div class="mb-6">
+            <h2 class="text-2xl font-extrabold text-navy">How the WhatsApp Bot Works</h2>
+            <p class="text-gray-500 text-sm mt-1">A step-by-step flow of the citizen's experience.</p>
+          </div>
+
+          <div class="flow-container">
+            <!-- The vertical connecting line -->
+            <div class="flow-line"></div>
+
+            <!-- Step 1 -->
+            <div class="flow-step">
+              <div class="flow-dot bg-green-100 text-green-600">
+                <i class="fa-brands fa-whatsapp"></i>
+              </div>
+              <div class="flow-content">
+                <span class="text-xs font-bold text-green-600 uppercase tracking-wider mb-1 block">Step 1: User Opens WhatsApp</span>
+                <h3 class="font-bold text-navy text-lg mb-2">Citizen sends a message</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">The user simply messages the bot in Hindi: <span class="bg-green-50 text-green-800 px-2 py-1 rounded text-xs font-mono font-semibold">"मुझे आय प्रमाण पत्र बनवाना है।"</span> (I want to make an income certificate).</p>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="flow-step">
+              <div class="flow-dot bg-blue-100 text-blue-600">
+                <i class="fa-solid fa-robot"></i>
+              </div>
+              <div class="flow-content">
+                <span class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1 block">Step 2: AI Understands</span>
+                <h3 class="font-bold text-navy text-lg mb-2">Bot identifies the service</h3>
+                <p class="text-gray-600 text-sm leading-relaxed mb-3">The AI replies: <em class="text-gray-500">"नमस्ते! मैं Apuni Sarkar Smart Assist हूँ..."</em> and displays:</p>
+                <div class="bg-blue-50/50 rounded-lg p-3 border border-blue-100 text-sm">
+                  <p><strong class="text-navy">Service:</strong> Income Certificate</p>
+                  <p><strong class="text-navy mt-1 block">Required Documents:</strong> Aadhaar Card, Income Proof, Residence Proof</p>
+                  <p><strong class="text-navy mt-1 block">Process:</strong> Online application</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="flow-step">
+              <div class="flow-dot bg-orange-100 text-orange">
+                <i class="fa-solid fa-hand-pointer"></i>
+              </div>
+              <div class="flow-content">
+                <span class="text-xs font-bold text-orange uppercase tracking-wider mb-1 block">Step 3: Service Guidance</span>
+                <h3 class="font-bold text-navy text-lg mb-2">Interactive Action Button</h3>
+                <p class="text-gray-600 text-sm leading-relaxed mb-3">A clickable button appears: <span class="inline-flex items-center gap-1 bg-orange text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"><i class="fa-solid fa-file-signature"></i> Apply for Income Certificate</span></p>
+                <p class="text-gray-600 text-sm leading-relaxed">When clicked, the bot explains the steps and asks the citizen: <em class="text-navy font-medium">"Do you want to continue?"</em></p>
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="flow-step">
+              <div class="flow-dot bg-purple-100 text-purple-600">
+                <i class="fa-solid fa-file-circle-check"></i>
+              </div>
+              <div class="flow-content">
+                <span class="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1 block">Step 4: Application</span>
+                <h3 class="font-bold text-navy text-lg mb-2">Form & Confirmation</h3>
+                <p class="text-gray-600 text-sm leading-relaxed mb-3">After clicking "Yes, Continue", a simple form appears in the chat asking for <strong>Name, Mobile Number, and Documents.</strong></p>
+                <div class="bg-green-50 border border-green-200 rounded-lg p-3 flex items-start gap-2">
+                  <i class="fa-solid fa-circle-check text-green-600 mt-0.5"></i>
+                  <p class="text-sm text-green-800 font-medium">Upon submission: <em>"Your application has been prepared successfully."</em></p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- additional note about the prototype -->
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex items-start gap-3 max-w-4xl mx-auto w-full mt-6 mb-12">
+      <i class="fa-solid fa-circle-info text-blue-600 text-xl mt-0.5"></i>
+      <p class="text-sm text-blue-800 leading-relaxed">
+        <strong class="font-bold">Prototype only.</strong> This is a demonstration for Prayas 2026 — no applications are actually submitted to any government portal. The video above shows the complete WhatsApp interaction.
+      </p>
+    </div>
+
+  </main>
+
+  <!-- ========== SCRIPT ========== -->
+  <script>
+    (function() {
+      // ---- 1. Build sidebar (Feature 3 active) ----
+      const icons = ['fa-star', 'fa-bolt', 'fa-shield-halved', 'fa-chart-line', 'fa-gears', 'fa-bell', 'fa-book', 'fa-headset', 'fa-database', 'fa-link'];
+      const sidebarNav = document.getElementById('sidebarNav');
+      
+      if (sidebarNav) {
+        for (let i = 1; i <= 10; i++) {
+          const li = document.createElement('li');
+          const isActive = (i === 3); // We are on Feature 3 page
+          
+          li.innerHTML = `
+            <a href="feature${i}.html" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:text-navy hover:bg-blue-50 text-sm font-semibold transition-colors group ${isActive ? 'active text-navy bg-blue-50' : ''}">
+              <div class="w-8 h-8 rounded-md ${isActive ? 'bg-orange text-white' : 'bg-blue-50 text-blue-700'} border ${isActive ? 'border-orange' : 'border-blue-100'} flex items-center justify-center group-hover:bg-orange group-hover:text-white group-hover:border-orange transition-colors">
+                <i class="fa-solid ${icons[i-1]} text-xs"></i>
+              </div>
+              Feature ${i}
+              <i class="fa-solid fa-chevron-right ml-auto ${isActive ? 'text-orange' : 'text-gray-300'} text-[10px] group-hover:text-orange transition-colors"></i>
+            </a>`;
+          sidebarNav.appendChild(li);
+        }
+      }
+
+      // ---- 2. Tab Switching Logic ----
+      window.switchTab = function(index) {
+        // Update buttons
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach((btn, i) => {
+          if (i === index) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+
+        // Update content visibility
+        document.getElementById('tab-content-0').classList.toggle('hidden', index !== 0);
+        document.getElementById('tab-content-1').classList.toggle('hidden', index !== 1);
+        
+        // Pause video if switching away from tab 0
+        const video = document.querySelector('video');
+        if (video) {
+          if (index !== 0) {
+            if (!video.paused) video.pause();
+          } else {
+            // Resume playing when coming back to tab 0
+            video.play().catch(e => console.log("Autoplay prevented:", e));
+          }
+        }
+      };
+
+      // ---- 3. Video fallback (if file is missing) ----
+      const video = document.querySelector('.video-container video');
+      if (video) {
+        video.addEventListener('error', function() {
+          const parent = video.parentElement;
+          // Create a placeholder div matching the aspect ratio
+          const placeholder = document.createElement('div');
+          placeholder.style.cssText = `
+            width: 100%;
+            aspect-ratio: 16/9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-family: Inter, sans-serif;
+            text-align: center;
+            padding: 2rem;
+            box-sizing: border-box;
+          `;
+          placeholder.innerHTML = `
+            <i class="fa-brands fa-whatsapp" style="font-size: 4rem; color: #25D366; margin-bottom: 1rem;"></i>
+            <p style="font-weight: 700; font-size: 1.25rem; color: #cbd5e1;">Feature 3 Demo Video</p>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem; color: #64748b;">Please place <strong style="color: #d35400;">feature3.mp4</strong> in the same folder to view the demo.</p>
+            <span style="display: inline-block; margin-top: 1.5rem; background: #1e293b; padding: 0.5rem 1.5rem; border-radius: 30px; font-size: 0.8rem; color: #94a3b8; border: 1px solid #334155;">Awaiting Video File</span>
+          `;
+          parent.replaceChild(placeholder, video);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
