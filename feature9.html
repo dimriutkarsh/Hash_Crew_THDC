@@ -540,7 +540,7 @@
       };
 
       let currentService = "Income Certificate";
-      let docState = {}; // Stores state for each doc: { file: File, status: 'not-uploaded'|'uploaded'|'valid'|'error', message: string }
+      let docState = {}; // Stores state for each doc
 
       // ---- 4. Render Logic ----
       function renderDocuments() {
@@ -624,7 +624,6 @@
         const file = event.target.files[0];
         if(!file) return;
 
-        // Immediate basic validation (size & format)
         const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
         if (!validTypes.includes(file.type)) {
           alert(currentLang === 'en' ? "Unsupported file format. Please upload a PDF, JPG, or PNG." : "असमर्थित फ़ाइल प्रारूप। कृपया PDF, JPG या PNG अपलोड करें।");
@@ -650,7 +649,7 @@
 
       window.changeService = function() {
         currentService = document.getElementById('service-select').value;
-        docState = {}; // Reset state when changing service
+        docState = {};
         document.getElementById('validation-summary').classList.add('hidden');
         renderDocuments();
       };
@@ -664,7 +663,6 @@
         btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Validating...`;
         btn.disabled = true;
 
-        // Reset all to "checking" visually
         docs.forEach(doc => {
           if(docState[doc.id] && docState[doc.id].file) {
             docState[doc.id].status = 'checking';
@@ -674,7 +672,6 @@
         renderDocuments();
 
         setTimeout(() => {
-          // Run simulated logic
           let validCount = 0;
           let missingCount = 0;
           let errorCount = 0;
@@ -683,7 +680,6 @@
             const state = docState[doc.id];
             
             if(!state || !state.file) {
-              // Missing
               docState[doc.id] = {
                 file: null,
                 status: 'error',
@@ -694,7 +690,6 @@
               return;
             }
 
-            // Simulated AI checks (using file name to fake scenarios)
             const fileName = state.file.name.toLowerCase();
             
             if (fileName.includes('blur') || fileName.includes('dark')) {
@@ -710,14 +705,12 @@
               docState[doc.id].message = currentLang === 'en' ? 'Document may not match the selected type.' : 'दस्तावेज़ चयनित प्रकार से मेल नहीं खा सकता है।';
               errorCount++;
             } else {
-              // Valid
               docState[doc.id].status = 'valid';
               docState[doc.id].message = currentLang === 'en' ? 'Document appears clear and ready.' : 'दस्तावेज़ स्पष्ट और तैयार लगता है।';
               validCount++;
             }
           });
 
-          // Update Summary UI
           document.getElementById('validation-summary').classList.remove('hidden');
           document.getElementById('sum-required').innerText = docs.length;
           document.getElementById('sum-uploaded').innerText = docs.filter(d => docState[d.id] && docState[d.id].file).length;
@@ -752,11 +745,8 @@
 
       // ---- 7. Demo Scenarios ----
       window.loadScenario = function(type) {
-        // Clear previous
         docState = {};
         const docs = SERVICES[currentService];
-
-        // Helper to create a fake file object
         const createFakeFile = (name, sizeMB = 1) => ({ name: name, size: sizeMB * 1024 * 1024, type: 'image/jpeg' });
 
         if (type === 'all_valid') {
@@ -774,7 +764,6 @@
           });
         } 
         else if (type === 'invalid') {
-          // We bypass the upload check for demo
           docs.forEach((d, i) => {
             if (i === 2) docState[d.id] = { file: createFakeFile(`mismatch_wrong_doc.jpg`), status: 'uploaded', message: '' };
             else docState[d.id] = { file: createFakeFile(`${d.id}_valid.jpg`), status: 'uploaded', message: '' };
@@ -783,14 +772,14 @@
         else if (type === 'mismatch') {
           docs.forEach((d, i) => {
             if (i === 1) docState[d.id] = { file: createFakeFile(`incomplete_page1.jpg`), status: 'uploaded', message: '' };
-            else docState[d.id] = { file: createFakeFile(`${d.id}_valid.jpg`), status: 'uploaded', message: '' }
-          };
+            else docState[d.id] = { file: createFakeFile(`${d.id}_valid.jpg`), status: 'uploaded', message: '' };
+          });
+        }
 
         document.getElementById('validation-summary').classList.add('hidden');
         renderDocuments();
-        
-        // Auto-trigger validation
         setTimeout(validateDocuments, 300);
+      };
 
       // ---- 8. Step Indicator Logic ----
       function updateStepIndicator() {
@@ -835,8 +824,6 @@
           document.getElementById('review-modal').classList.add('hidden');
           document.getElementById('review-modal').classList.remove('flex');
           alert(currentLang === 'en' ? "Prototype Review Complete! No real application was submitted." : "प्रोटोटाइप समीक्षा पूर्ण! कोई वास्तविक आवेदन जमा नहीं किया गया।");
-          
-          // Reset
           resetDemo();
         }, 1200);
       };
@@ -850,7 +837,6 @@
         document.getElementById('btn-complete-review').disabled = true;
         document.getElementById('btn-complete-review').innerHTML = `<span data-en="Prototype Review Complete" data-hi="प्रोटोटाइप समीक्षा पूर्ण">Prototype Review Complete</span>`;
         
-        // Reset validate button
         const btn = document.getElementById('btn-validate');
         btn.innerHTML = `<i class="fa-solid fa-microchip mr-2"></i> <span data-en="Validate Documents" data-hi="दस्तावेज़ सत्यापित करें">Validate Documents</span>`;
         btn.className = "bg-navy text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-900 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-lg";
